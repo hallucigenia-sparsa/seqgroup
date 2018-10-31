@@ -1,0 +1,25 @@
+Package: seqgroup
+Title: Analysis of Sequencing Data with Groups
+Type: Package
+Version: 0.1.0
+Author: c(person("Karoline", "Faust", email = "karoline.faust@kuleuven.be", role = c("aut", "cre")))
+Maintainer: Karoline Faust <karoline.faust@kuleuven.be>
+License: GPL-2
+Description: The seqgroup R package provides functions that support the analysis of metadata and groups in microbial sequencing data.
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 3.2.1),
+    vegan,
+    ggplot2,
+    reshape2,
+    igraph
+Imports:
+  cluster,
+  DirichletMultinomial,
+  phyloseq,
+  ggpubr,
+  dirmult,
+  SpiecEasi
+Remotes: zdk123/SpiecEasi
+RoxygenNote: 6.1.0
