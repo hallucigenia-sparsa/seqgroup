@@ -4,17 +4,22 @@
 \alias{seqPCoA}
 \title{PCoA for microbial sequencing data}
 \usage{
-seqPCoA(abundances, metadata = NULL, groupAttrib = "", groups = c(),
-  clusters = c(), labels = c(), time = c(), hiddenSamples = c(),
-  dis = "bray", rda = FALSE, scale = FALSE, doScree = FALSE,
-  topTaxa = 10, topMetadata = 10, arrowFactor = 0.5,
-  metadataFactor = 1, centroidFactor = 1, taxonColor = "brown",
-  metadataColor = "blue", xlim = c(-0.3, 0.3), ylim = c(-0.3, 0.3),
-  permut = 1000, pAdjMethod = "BH", qvalThreshold = 0.05,
-  dimensions = c(1, 2), ...)
+seqPCoA(abundances, reference = NULL, refName = "ref",
+  metadata = NULL, groupAttrib = "", groups = c(),
+  groupColors = NULL, colors = c(), clusters = c(), labels = c(),
+  time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
+  scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
+  arrowFactor = 0.5, metadataFactor = 1, centroidFactor = 1,
+  taxonColor = "brown", metadataColor = "blue", xlim = c(-0.3, 0.3),
+  ylim = c(-0.3, 0.3), permut = 1000, pAdjMethod = "BH",
+  qvalThreshold = 0.05, dimensions = c(1, 2), ...)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
+
+\item{reference}{an optional reference data set on which abundances are mapped; data are merged by matching row names; cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)}
+
+\item{refName}{group name for reference samples}
 
 \item{metadata}{an optional data frame with metadata items, where samples are in the same order as in x, if provided and rda is FALSE, envfit is carried out}
 
@@ -22,15 +27,19 @@ seqPCoA(abundances, metadata = NULL, groupAttrib = "", groups = c(),
 
 \item{groups}{an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided}
 
+\item{groupColors}{an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent}
+
+\item{colors}{an optional vector of colors to be used to color samples; it overrides groupColors if provided}
+
 \item{clusters}{an optional vector that provides for each sample its cluster membership as an integer (cluster membership is visualized through shape, up to 10 different shapes are possible)}
 
-\item{labels}{an optional vector that provides for each sample its label to display}
+\item{labels}{an optional vector that provides for each sample a label to display}
 
-\item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points}
+\item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)}
 
 \item{hiddenSamples}{an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)}
 
-\item{dis}{dissimilarity or distance supported by vegan}
+\item{dis}{dissimilarity or distance supported by vegan's vegdist function}
 
 \item{rda}{carry out an RDA instead of a PCoA}
 
@@ -38,7 +47,7 @@ seqPCoA(abundances, metadata = NULL, groupAttrib = "", groups = c(),
 
 \item{doScree}{do a Scree plot}
 
-\item{topTaxa}{if larger than zero: show the top N taxa most correlated to principal components as arrows in the PCoA}
+\item{topTaxa}{if larger than zero: show the top N taxa most strongly covarying with principal components as arrows in the PCoA if they are significant according to a permutation test}
 
 \item{topMetadata}{if larger than zero, metadata provided and rda false: show the top N most significant numeric metadata as arrows and the top N most significant factor metadata as text in the PCoA}
 
@@ -56,11 +65,11 @@ seqPCoA(abundances, metadata = NULL, groupAttrib = "", groups = c(),
 
 \item{ylim}{range shown on the y axis}
 
-\item{permut}{number of permutations in envfit}
+\item{permut}{number of permutations for top-covarying taxa and envfit}
 
-\item{pAdjMethod}{method for multiple testing correction supported by p.adjust for envfit p-values}
+\item{pAdjMethod}{method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values}
 
-\item{qvalThreshold}{threshold on multiple-testing corrected envfit p-values}
+\item{qvalThreshold}{threshold on multiple-testing corrected top-covarying taxon and envfit p-values}
 
 \item{dimensions}{the principal components used for plotting, by default the first and second}
 
@@ -68,6 +77,9 @@ seqPCoA(abundances, metadata = NULL, groupAttrib = "", groups = c(),
 }
 \description{
 A wrapper around various PCoA-based analyses implemented in vegan. The wrapper can handle groups and
-metadata. The na.action is set to na.omit, however envfit cannot deal with
+metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, however envfit cannot deal with
 missing values, therefore if metadata are provided, they should be free of missing values.
+When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
+groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
+The color vector is likewise extended if provided.
 }

@@ -14,7 +14,7 @@ intersectTables(table1, table2, byRow = FALSE)
 \item{byRow}{compare tables row-wise}
 }
 \value{
-the intersection table
+a list with the two tables with matching sample names
 }
 \description{
 Discard rows or columns that are not present

@@ -32,7 +32,7 @@ mergeTables<-function(table1, table2, keep.nonmatch=FALSE, byRow=TRUE){
 #' @param table1 a matrix
 #' @param table2 a matrix
 #' @param byRow compare tables row-wise
-#' @return the intersection table
+#' @return a list with the two tables with matching sample names
 #'
 #' @export
 intersectTables<-function(table1, table2, byRow=FALSE){

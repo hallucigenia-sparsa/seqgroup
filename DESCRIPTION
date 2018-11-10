@@ -4,7 +4,7 @@ Type: Package
 Version: 0.1.0
 Author: c(person("Karoline", "Faust", email = "karoline.faust@kuleuven.be", role = c("aut", "cre")))
 Maintainer: Karoline Faust <karoline.faust@kuleuven.be>
-License: GPL-2
+License: BSD_2_clause + file LICENSE
 Description: The seqgroup R package provides functions that support the analysis of metadata and groups in microbial sequencing data.
 Encoding: UTF-8
 LazyData: true

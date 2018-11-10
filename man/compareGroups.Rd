@@ -32,7 +32,7 @@ compareGroups(abundances, property = "beta", method = "dissim",
 
 \item{xlab}{the x axis label}
 
-\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot}
+\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr}
 }
 \description{
 Compare diversity-related properties across groups
