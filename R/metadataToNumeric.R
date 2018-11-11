@@ -10,26 +10,25 @@
 #' @param yes the symbol used for the first value in a binary metadata item (e.g. "Y")
 #' @param no the symbol used for the second value in a binary metadata item (e.g. "N")
 #' @param na.threshold remove metadata with more than the maximum allowed percentage of missing values
-#' @param to.skip metadata to skip from binarization
+#' @param to.skip names of metadata to skip from binarization
 #' @param binarize convert categoric metadata items into as many binary metadata items as there are categories (if false, metadata with more than 2 categories are removed)
 #' @param date.items names of metadata items that represent dates
 #' @param format the format used for the date items (an example date fitting the default format is 26/1/80)
 #' @param referenceDate reference date used for conversion of dates into numbers (the reference date format is always d/m/Y)
+#' @param remove.neg remove metadata items with negative values
 #' @return a purely numeric dataframe
 #' @export
-metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip=c(), binarize=TRUE, date.items=c(),format="%d/%m/%y", referenceDate="1/1/1900"){
+metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip=c(), binarize=TRUE, date.items=c(),format="%d/%m/%y", referenceDate="1/1/1900", remove.neg=TRUE){
   binarizedMetadata=list()
   metadata.to.remove=c()
   skip.from.conversion=c()
   # loop metadata items
   for(name in names(metadata)){
     #print(paste("Processing",name))
-    # remove leading or trailing white spaces
-    for(j in 1:nrow(metadata)){
-      metadata[[name]][j]=trimws(metadata[[name]][j])
-    }
+    # cannot remove leading or trailing white spaces, since this alters the content of factors
     # convert date into numeric
     if(name %in% date.items){
+      print(paste("Processing date item",name))
       metadata[[name]]=as.numeric(as.Date(metadata[[name]],format=format)-as.Date(referenceDate,format="%d/%m/%Y"))
     }else{
       if(is.factor(metadata[[name]])){
@@ -57,13 +56,15 @@ metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip
           metadata.to.remove=c(metadata.to.remove,name)
           # binarize categoric metadata
           if(binarize && !(name %in% to.skip)){
+            print(paste("Binarizing metadata", name))
+            #print(levels)
             # there are less categories than samples
             if(length(levels)<nrow(metadata)){
               categoryNames=c()
               # initialize category-specific metadata items as absent
               # levels are NA-free
               for(level in levels){
-                categoryName=paste(name,level,sep="-")
+                categoryName=paste(name,trimws(level),sep="-")
                 categoryNames=c(categoryNames,categoryName)
                 binarizedMetadata[[categoryName]]=rep(0,nrow(metadata))
               }
@@ -72,7 +73,7 @@ metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip
                 for(j in 1:nrow(metadata)){
                   value=metadata[[name]][j]
                   if(!is.na(value)){
-                    categoryName=paste(name,value,sep="-")
+                    categoryName=paste(name,trimws(value),sep="-")
                     binarizedMetadata[[categoryName]][j]=1
                   }else{
                     # set all categories to NA
@@ -82,6 +83,7 @@ metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip
                   }
                 }
               }
+              #print(binarizedMetadata)
             }else{
               warning(paste("Cannot binarize categoric metadata item",name,"because it has as many categories as samples."))
             }
@@ -98,6 +100,6 @@ metadataToNumeric<-function(metadata, yes="Y", no="N", na.threshold=100, to.skip
       metadata[[append]]=binarizedMetadata[[append]]
     }
   }
-  metadata.filtered=filterMetadata(metadata,toFilter = metadata.to.remove,na.threshold = na.threshold)
+  metadata.filtered=filterMetadata(metadata,toFilter = metadata.to.remove,na.threshold = na.threshold, remove.neg=remove.neg)
   return(metadata.filtered)
 }

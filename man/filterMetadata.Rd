@@ -4,14 +4,17 @@
 \alias{filterMetadata}
 \title{Filter metadata}
 \usage{
-filterMetadata(data, toFilter = c(), na.threshold = 0)
+filterMetadata(data, toFilter = c(), na.threshold = 0,
+  remove.neg = FALSE)
 }
 \arguments{
-\item{data}{a matrix where metadata are rows and samples are columns or a data frame of metadata items}
+\item{data}{a data frame with metadata items}
 
 \item{toFilter}{names of metadata to remove}
 
 \item{na.threshold}{percentage of NA values allowed, between 0 and 100}
+
+\item{remove.neg}{remove metadata items with negative values}
 }
 \value{
 a data frame of filtered metadata items

@@ -4,38 +4,50 @@
 #' of missing values, constant metadata and metadata with names as provided
 #' in the toFilter vector.
 #'
-#' @param data a matrix where metadata are rows and samples are columns or a data frame of metadata items
+#' @param data a data frame with metadata items
 #' @param toFilter names of metadata to remove
 #' @param na.threshold percentage of NA values allowed, between 0 and 100
+#' @param remove.neg remove metadata items with negative values
 #' @return a data frame of filtered metadata items
 #' @export
-filterMetadata<-function(data, toFilter=c(), na.threshold=0){
-  if(is.data.frame(data)){
-    data=t(as.matrix(data))
+filterMetadata<-function(data, toFilter=c(), na.threshold=0, remove.neg=FALSE){
+  if(!is.data.frame(data)){
+    stop("Please provide a data frame.")
   }
   onePerc=ncol(data)/100
   na.number.threshold=round(onePerc*na.threshold)
   print(paste("Allowed number of NAs:",na.number.threshold))
   indices.tokeep=c()
-  for(i in 1:nrow(data)){
-    values=unique(data[i,])
+  index.counter=1
+  # loop metadadata items
+  for(name in names(data)){
+    values=unique(data[[name]])
     values=setdiff(values,NA)
-    numberNA=length(which(is.na(data[i,])))
+    numberNA=length(which(is.na(data[[name]])))
     if(length(values)>1 && numberNA<=na.number.threshold){
-      if(rownames(data)[i] %in% toFilter){
-        print(paste("Skipping metadata item: ",rownames(data)[i],sep=""))
+      if(name %in% toFilter){
+        print(paste("Skipping metadata item: ",name,sep=""))
       }else{
-        indices.tokeep=c(indices.tokeep,i)
+        if(!is.factor(data[[name]]) && remove.neg){
+          if(length(which(as.numeric(values)<0))==0){
+            indices.tokeep=c(indices.tokeep,index.counter)
+          }else{
+            print(paste("Skipping metadata item with negative values: ",name,sep=""))
+          }
+        }else{
+          indices.tokeep=c(indices.tokeep,index.counter)
+        }
       }
     }else{
       if(numberNA>na.number.threshold){
-        print(paste("Filtering metadata",rownames(data)[i],"with index",i,"because it has more missing values (namely",numberNA,") than the allowed percentage"))
+        print(paste("Filtering metadata",name,"with index",index.counter,"because it has more missing values (namely",numberNA,") than the allowed percentage"))
       }else{
-        print(paste("Filtering metadata",rownames(data)[i],"with index",i,"because it is constant"))
+        print(paste("Filtering metadata",name,"with index",index.counter,"because it is constant"))
       }
     }
+    index.counter=index.counter+1
   } # end loop
-  return(as.data.frame(t(data[indices.tokeep,])))
+  return(data[,indices.tokeep])
 }
 
 #' @title Assign data types to metadata

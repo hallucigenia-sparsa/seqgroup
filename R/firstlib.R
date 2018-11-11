@@ -10,6 +10,7 @@
 #' @importFrom stats na.omit
 #' @importFrom stats median
 #' @importFrom stats sd
+#' @importFrom utils write.table
 #' @importFrom dirmult dirmult
 #' @importFrom phyloseq tax_table
 #' @importFrom phyloseq otu_table

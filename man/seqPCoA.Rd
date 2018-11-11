@@ -82,4 +82,10 @@ missing values, therefore if metadata are provided, they should be free of missi
 When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
 The color vector is likewise extended if provided.
+When topTaxa is set larger zero, significant top-varying taxa are shown. The permutation test is carried out by shuffling the selected number of top-covarying taxa.
+Multiple testing correction on parameter-free p-values is then only applied to these top-covarying taxa. The strength of covariance is determined as
+the norm of the vectors resulting from multiplying the standardized eigen vectors with the taxa.
+In contrast, envfit p-values are computed for all metadata and multiple-testing correction is consequently applied to all metadata provided, though
+only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
+topMetadata ranks metadata by significance.
 }

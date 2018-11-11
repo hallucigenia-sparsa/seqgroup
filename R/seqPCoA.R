@@ -6,6 +6,12 @@
 #' When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 #' groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
 #' The color vector is likewise extended if provided.
+#' When topTaxa is set larger zero, significant top-varying taxa are shown. The permutation test is carried out by shuffling the selected number of top-covarying taxa.
+#' Multiple testing correction on parameter-free p-values is then only applied to these top-covarying taxa. The strength of covariance is determined as
+#' the norm of the vectors resulting from multiplying the standardized eigen vectors with the taxa.
+#' In contrast, envfit p-values are computed for all metadata and multiple-testing correction is consequently applied to all metadata provided, though
+#' only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
+#' topMetadata ranks metadata by significance.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names; cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
@@ -210,51 +216,53 @@ seqPCoA<-function(abundances, reference=NULL, refName="ref", metadata=NULL, grou
     # taken from biplot.pcoa in ape
     # columns are taxa
     Y=t(abundances)
-    n <- nrow(Y)
+    n <- nrow(Y) # n = sample number
     # standardize eigen vectors (subtract mean and divide by standard deviation)
+    # eigen vector dimensions: samples x selected dimensions
     ev.stand <- scale(pcoa.res$CA$u[,dimensions])
     # covariance between taxa (as columns) and selected principal components (standardized eigen vectors)
     S <- cov(Y, ev.stand)
+    # scale S by the eigen values
+    U <- S %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
+    colnames(U) <- colnames(pcoa.res$CA$u[,dimensions])
+    # U dimensions: taxa x selected dimensions
+
+    # select top covarying taxa in U
+    # arrrow length codes strength of covariance with eigen vectors
+    norms=apply(U,1,myNorm)
+    sorted=sort(norms,index.return=TRUE,decreasing=TRUE)
+    sorted.top.indices=sorted$ix[1:topTaxa]
+    pvalues=c()
+    U.sub=U[sorted.top.indices,]
+    Y.sub=Y[,sorted.top.indices]
     # taxa vs permutations
-    permuted.norms=matrix(NA,nrow=nrow(abundances),ncol=permut)
-    # permutation test
+    permuted.norms=matrix(NA,nrow=ncol(Y.sub),ncol=permut)
+    # carry out permutation test
     for(iteration in 1:permut){
-      # shuffle eigenvectors separately
-      ev.stand.rand=apply(ev.stand,2,sample)
-      S.rand=cov(Y,ev.stand.rand)
+      # shuffle abundances separately per column (in Y, taxa are columns)
+      Y.rand=apply(Y.sub,2,sample)
+      S.rand=cov(Y.rand,ev.stand)
       # scale the shuffled S by eigen values
       U.rand <- S.rand %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
       # taxon arrows are defined by U, which has as many rows as taxa and as many columns as selected eigen vectors
       # compute arrow length as vector norm for each row (each row represents one arrow)
       permuted.norms[,iteration]=apply(U.rand,1,myNorm)
     }
-    # scale S by the eigen values
-    U <- S %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
-    colnames(U) <- colnames(pcoa.res$CA$u[,dimensions])
-
-    # select top taxa in U
-    # arrrow length codes strength of covariance with eigen vectors
-    norms=apply(U,1,myNorm)
-    pvalues=c()
     # compute signficance of vector norms
-    for(taxon.index in 1:nrow(abundances)){
+    for(taxon.index in 1:ncol(Y.sub)){
       obs.norm=norms[taxon.index]
       # check how many permuted norms are larger than observed norm
       r=length(which(permuted.norms[taxon.index,]>obs.norm))
       # compute parameter-free p-value
       pvalues=c(pvalues,(r+1)/(permut+1))
     }
-    # adjust p-values for multiple testing correction
+    # adjust p-values for multiple testing and discard corrected p-values below selected significance level
     pvalues=p.adjust(pvalues,method=pAdjMethod)
     sig.pvalue.indices=which(pvalues<qvalThreshold)
-    print(paste(length(sig.pvalue.indices),"significantly covarying taxa found."))
-    #rowsums=apply(abs(U),1,sum)
-    #sorted=sort(rowsums,index.return=TRUE,decreasing=TRUE)
-    sorted=sort(norms,index.return=TRUE,decreasing=TRUE)
-    sorted.indices=intersect(sig.pvalue.indices,sorted$ix[1:topTaxa])
-    #U.selected=U[sorted$ix[1:topTaxa],]
-    if(length(sorted.indices)>0){
-      U.selected=U[sorted.indices,]
+    # only keep significant top covarying taxa
+    U.selected=U.sub[sig.pvalue.indices,]
+    if(length(sig.pvalue.indices)>0){
+      print(paste("Among the top ",topTaxa," covarying taxa, ",length(sig.pvalue.indices)," are significant.",sep=""))
       arrows(0, 0, U.selected[, 1] * arrowFactor, U.selected[, 2] * arrowFactor, col = taxonColor,length = 0.1, lty=2)
 
       shift=0.1
@@ -353,6 +361,7 @@ assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap
   colors=c()
   # fill the color map
   if(is.null(myColors)){
+    myColors=list()
     for(group.index in 1:length(groups)){
       group=as.character(groups[group.index])
       if(!(group %in% names(myColors))){
@@ -366,11 +375,12 @@ assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap
     } # loop samples
   } # color map already filled
 
+  #print(myColors)
   # assign colors from the color map
   for(group.index in 1:length(groups)){
     #print(groups[group.index])
-    #print(myColors[[groups[group.index]]])
-    colors=c(colors,myColors[[groups[group.index]]])
+    #print(myColors[[as.character(groups[group.index])]])
+    colors=c(colors,myColors[[as.character(groups[group.index])]])
   }
 
   if(returnMap){

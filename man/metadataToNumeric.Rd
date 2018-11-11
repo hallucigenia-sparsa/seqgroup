@@ -6,7 +6,8 @@
 \usage{
 metadataToNumeric(metadata, yes = "Y", no = "N", na.threshold = 100,
   to.skip = c(), binarize = TRUE, date.items = c(),
-  format = "\%d/\%m/\%y", referenceDate = "1/1/1900")
+  format = "\%d/\%m/\%y", referenceDate = "1/1/1900",
+  remove.neg = TRUE)
 }
 \arguments{
 \item{metadata}{a dataframe}
@@ -17,7 +18,7 @@ metadataToNumeric(metadata, yes = "Y", no = "N", na.threshold = 100,
 
 \item{na.threshold}{remove metadata with more than the maximum allowed percentage of missing values}
 
-\item{to.skip}{metadata to skip from binarization}
+\item{to.skip}{names of metadata to skip from binarization}
 
 \item{binarize}{convert categoric metadata items into as many binary metadata items as there are categories (if false, metadata with more than 2 categories are removed)}
 
@@ -26,6 +27,8 @@ metadataToNumeric(metadata, yes = "Y", no = "N", na.threshold = 100,
 \item{format}{the format used for the date items (an example date fitting the default format is 26/1/80)}
 
 \item{referenceDate}{reference date used for conversion of dates into numbers (the reference date format is always d/m/Y)}
+
+\item{remove.neg}{remove metadata items with negative values}
 }
 \value{
 a purely numeric dataframe
