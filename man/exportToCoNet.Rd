@@ -45,4 +45,6 @@ If binary metadata are provided as strings, the strings encoding 0 (no) and 1 (y
 If lineages are provided, they are exported into a CoNet metadata file, which can be used for all group-specific
 data sets, in case groups are provided. Either the last column or the row names of the lineage matrix have to match the
 row names of the abundance matrix.
+
+TODO: treat special characters
 }

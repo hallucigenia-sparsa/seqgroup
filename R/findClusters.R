@@ -23,7 +23,7 @@ findClusters<-function(abundances, method="dmm", k=5){
     absent.taxa=which(taxonSums==0)
     colSums=colSums(abundances)
     if(length(unique(colSums))>1){
-      stop("For DMM, please provide samples with the same total count.")
+      warning("The total counts across samples are not the same - DMM may be biased.")
     }
     if(length(absent.taxa)>0){
       stop("For DMM, please remove taxa with no occurrence across samples.")

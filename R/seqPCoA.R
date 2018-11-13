@@ -5,7 +5,10 @@
 #' missing values, therefore if metadata are provided, they should be free of missing values.
 #' When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 #' groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
-#' The color vector is likewise extended if provided.
+#' The color vector is likewise extended if provided. If a clusters, time and/or labels vector is provided together with a referene, it has to refer to both data sets.
+#' Samples in the abundance matrix are appended after the reference samples, so cluster memberships, time points and/or labels have to be provided in the same order.
+#' Different total counts in abundances and reference samples may bias the result, therefore rarefyRef allows to rarefy both to the same total count after matching.
+#' RarefyRef will rarefy all samples to the lowest total count found in any sample. Rows with zero counts after rarefaction are removed.
 #' When topTaxa is set larger zero, significant top-varying taxa are shown. The permutation test is carried out by shuffling the selected number of top-covarying taxa.
 #' Multiple testing correction on parameter-free p-values is then only applied to these top-covarying taxa. The strength of covariance is determined as
 #' the norm of the vectors resulting from multiplying the standardized eigen vectors with the taxa.
@@ -14,7 +17,8 @@
 #' topMetadata ranks metadata by significance.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
-#' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names; cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
+#' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
+#' @param rarefyRef rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ
 #' @param refName group name for reference samples
 #' @param metadata an optional data frame with metadata items, where samples are in the same order as in x, if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
@@ -46,7 +50,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=c(-0.3,0.3), ylim=c(-0.3,0.3), permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=c(-0.3,0.3), ylim=c(-0.3,0.3), permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
 
   if(rda && is.null(metadata)){
     stop("Metadata are needed for RDA!")
@@ -62,9 +66,13 @@ seqPCoA<-function(abundances, reference=NULL, refName="ref", metadata=NULL, grou
 
   if(!is.null(reference)){
     # match abundances and reference by their row names
-    res=intersectTables(reference,abundances,byRow = TRUE)
+    res=intersectTables(reference,abundances,byRow = TRUE, keepSumNonMatched = TRUE)
     # append matched abundances to reference
     abundances=cbind(res$table1,res$table2)
+    if(rarefyRef){
+      # rarefy and discard taxa with zero abundance after rarefaction
+      abundances=rarefyFilter(abundances)$rar
+    }
     if(length(groups)>0){
       if(length(groups)!=ncol(abundances)){
         # extend groups to reference
@@ -241,6 +249,7 @@ seqPCoA<-function(abundances, reference=NULL, refName="ref", metadata=NULL, grou
     for(iteration in 1:permut){
       # shuffle abundances separately per column (in Y, taxa are columns)
       Y.rand=apply(Y.sub,2,sample)
+      # only look at top covarying taxa
       S.rand=cov(Y.rand,ev.stand)
       # scale the shuffled S by eigen values
       U.rand <- S.rand %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
@@ -398,3 +407,48 @@ myNorm<-function(x){
   }
   return(sqrt(sum(x^2)))
 }
+
+#' @title Rarefaction combined with sample filtering
+#'
+#' @description Rarefy a matrix to the given minimum count number column-wise
+#' using vegan's rrarefy function. If columns have less than the minimum count number,
+#' they are discarded. Rows that have a sum of zero after rarefaction are also discarded.
+#' @param x a matrix
+#' @param min minimum count to which x is to be rarefied (if equal to zero, the minimum column sum is taken as min)
+#' @return a list with the rarefied matrix (rar) and the indices of the columns that were kept (colindices)
+rarefyFilter<-function(x,min = 0){
+  keep=c()
+  if(min < 0){
+    stop("Min should be either 0 or positive.")
+  }
+  if(min == 0){
+    min=min(colsums=apply(x,2,sum))
+    print(paste("Rarefy to minimum count",min))
+    keep=c(1:ncol(x))
+  }else{
+    colsums=apply(x,2,sum)
+    # there are columns below the minimum
+    if(min(colsums) < min){
+      # loop column sums
+      for(j in 1:ncol(x)){
+        if(colsums[j] >= min){
+          keep=c(keep,j)
+        }
+      }
+      print(paste("Number of columns",ncol(x)))
+      print(paste("Keeping ",length(keep)," columns with column sums equal or above",min))
+      x=x[,keep]
+    }
+  }
+  rar=t(vegan::rrarefy(t(x),min))
+  zero.indices=which(rowSums(rar)==0)
+  # discard taxa with zero sums
+  if(length(zero.indices)>0){
+    keep.nonzero=setdiff(1:nrow(rar),zero.indices)
+    rar=rar[keep.nonzero,]
+  }
+  res=list(rar,keep)
+  names(res)=c("rar","colindices")
+  return(res)
+}
+

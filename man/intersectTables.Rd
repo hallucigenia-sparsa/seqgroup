@@ -4,7 +4,8 @@
 \alias{intersectTables}
 \title{Table intersection}
 \usage{
-intersectTables(table1, table2, byRow = FALSE)
+intersectTables(table1, table2, byRow = FALSE,
+  keepSumNonMatched = FALSE)
 }
 \arguments{
 \item{table1}{a matrix}
@@ -12,6 +13,8 @@ intersectTables(table1, table2, byRow = FALSE)
 \item{table2}{a matrix}
 
 \item{byRow}{compare tables row-wise}
+
+\item{keepSumNonMatched}{keep the sum of non-matching rows as last row (row name: sumUnique)}
 }
 \value{
 a list with the two tables with matching sample names

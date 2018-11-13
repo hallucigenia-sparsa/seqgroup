@@ -5,7 +5,7 @@
 \title{Aggregate a taxon abundance matrix}
 \usage{
 aggregateTaxa(x, lineages, taxon.level = "class", unknown = c(NA,
-  "unclassified"))
+  "unclassified"), keepSumUnknown = FALSE)
 }
 \arguments{
 \item{x}{an abundance matrix with taxa as rows and samples as columns}
@@ -14,7 +14,9 @@ aggregateTaxa(x, lineages, taxon.level = "class", unknown = c(NA,
 
 \item{taxon.level}{taxonomic level to which data set is aggregated (kingdom, phylum, class, order, family, genus or species)}
 
-\item{unknown}{descriptors of unclassified taxa}
+\item{unknown}{descriptors for unclassified taxa}
+
+\item{keepSumUnknown}{keep the sum of taxa without higher-level taxon classification on the desired level as last row (row name: sumUnknown)}
 }
 \description{
 Given a taxon and a lineage matrix, aggregate taxa belonging to the same

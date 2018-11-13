@@ -4,8 +4,8 @@
 \alias{seqPCoA}
 \title{PCoA for microbial sequencing data}
 \usage{
-seqPCoA(abundances, reference = NULL, refName = "ref",
-  metadata = NULL, groupAttrib = "", groups = c(),
+seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
+  refName = "ref", metadata = NULL, groupAttrib = "", groups = c(),
   groupColors = NULL, colors = c(), clusters = c(), labels = c(),
   time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
   scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
@@ -17,7 +17,9 @@ seqPCoA(abundances, reference = NULL, refName = "ref",
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
-\item{reference}{an optional reference data set on which abundances are mapped; data are merged by matching row names; cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)}
+\item{reference}{an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)}
+
+\item{rarefyRef}{rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ}
 
 \item{refName}{group name for reference samples}
 
@@ -81,7 +83,10 @@ metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, howe
 missing values, therefore if metadata are provided, they should be free of missing values.
 When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
-The color vector is likewise extended if provided.
+The color vector is likewise extended if provided. If a clusters, time and/or labels vector is provided together with a referene, it has to refer to both data sets.
+Samples in the abundance matrix are appended after the reference samples, so cluster memberships, time points and/or labels have to be provided in the same order.
+Different total counts in abundances and reference samples may bias the result, therefore rarefyRef allows to rarefy both to the same total count after matching.
+RarefyRef will rarefy all samples to the lowest total count found in any sample. Rows with zero counts after rarefaction are removed.
 When topTaxa is set larger zero, significant top-varying taxa are shown. The permutation test is carried out by shuffling the selected number of top-covarying taxa.
 Multiple testing correction on parameter-free p-values is then only applied to these top-covarying taxa. The strength of covariance is determined as
 the norm of the vectors resulting from multiplying the standardized eigen vectors with the taxa.

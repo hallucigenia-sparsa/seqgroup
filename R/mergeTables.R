@@ -32,11 +32,12 @@ mergeTables<-function(table1, table2, keep.nonmatch=FALSE, byRow=TRUE){
 #' @param table1 a matrix
 #' @param table2 a matrix
 #' @param byRow compare tables row-wise
+#' @param keepSumNonMatched keep the sum of non-matching rows as last row (row name: sumUnique)
 #' @return a list with the two tables with matching sample names
 #'
 #' @export
-intersectTables<-function(table1, table2, byRow=FALSE){
-  res=tableMatcher(table1 = table1, table2=table2, keep.nonmatch=FALSE, byRow = byRow)
+intersectTables<-function(table1, table2, byRow=FALSE, keepSumNonMatched=FALSE){
+  res=tableMatcher(table1 = table1, table2=table2, keep.nonmatch=FALSE, byRow = byRow, keepSumNonMatched = keepSumNonMatched)
   if(!byRow){
     res.t=list(t(res$table1),t(res$table2))
     names(res.t)=c("table1","table2")
@@ -46,7 +47,7 @@ intersectTables<-function(table1, table2, byRow=FALSE){
 }
 
 # internal tableMatcher function
-tableMatcher<-function(table1, table2, keep.nonmatch = FALSE, byRow=FALSE){
+tableMatcher<-function(table1, table2, keep.nonmatch = FALSE, keepSumNonMatched = FALSE, byRow=FALSE){
   # merge tables by their column names
   if(!byRow){
     table1=t(table1)
@@ -91,6 +92,12 @@ tableMatcher<-function(table1, table2, keep.nonmatch = FALSE, byRow=FALSE){
   #print(rownames(uniqueTable2))
   table1=table1[setdiff(1:nrow(table1),indicesDiscard1),]
   table2=table2[setdiff(1:nrow(table2),indicesDiscard2),]
+  if(keepSumNonMatched){
+    sumOfUniques1=colSums(uniqueTable1)
+    sumOfUniques2=colSums(uniqueTable2)
+    table1=rbind(table1,"sumUnique"=sumOfUniques1)
+    table2=rbind(table2,"sumUnique"=sumOfUniques2)
+  }
   if(keep.nonmatch==TRUE){
     # append rows only present in table 1 and set them to zero in table 2
     if(length(indicesDiscard1)>0){
