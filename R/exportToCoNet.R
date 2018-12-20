@@ -26,6 +26,9 @@
 #' @export
 
 exportToCoNet<-function(abundances, metadata=NULL, lineages=NULL, groups=c(), export.folder="", root.name="conet", metadata.to.skip=c(), omitNeg=TRUE, yes="Y", no="N", date.items=c(), date.format="%d/%m/%y", taxa.are.rownames=FALSE){
+  if(is.data.frame(metadata)==FALSE){
+    metadata=as.data.frame(metadata)
+  }
   for(skip in metadata.to.skip){
     metadata[[skip]]=NULL
   }

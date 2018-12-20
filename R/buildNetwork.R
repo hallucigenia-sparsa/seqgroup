@@ -12,6 +12,7 @@
 #' The returned network can be visualized with igraph's
 #' interactive network visualisation function tkplot or
 #' simply with igraph's plot function.
+#' TODO: support bnlearn
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param lineages a matrix with lineages in the phyloseq format
