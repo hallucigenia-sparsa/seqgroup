@@ -25,3 +25,9 @@ Then you can install seqgroup with the following commands:
 library(devtools)
 install_github("hallucigenia-sparsa/seqgroup")
 ```
+
+Now, you can load the seqgroup R package:
+
+```r
+library(seqgroup)
+```
