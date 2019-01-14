@@ -4,7 +4,7 @@
 \alias{compareDistribs}
 \title{Compare the distribution of a taxon across two groups}
 \usage{
-compareDistribs(x, taxon, groups, group1 = 1, group2 = 2,
+compareDistribs(x, taxon, groups = c(), group1 = 1, group2 = 2,
   name1 = "group1", name2 = "group2")
 }
 \arguments{
@@ -12,9 +12,11 @@ compareDistribs(x, taxon, groups, group1 = 1, group2 = 2,
 
 \item{taxon}{the index or name of a taxon to be compared}
 
-\item{group1}{the identifier of the first group, numeric or character}
+\item{groups}{a vector that provides for each sample its group membership (numeric or character)}
 
-\item{group2}{the identifier of the second group, numeric or character}
+\item{group1}{the identifier of the first group (numeric or character)}
+
+\item{group2}{the identifier of the second group (numeric or character)}
 
 \item{name1}{the name to be displayed for the first group}
 

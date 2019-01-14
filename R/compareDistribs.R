@@ -5,12 +5,13 @@
 #'
 #' @param x a matrix with taxa as rows and samples as columns
 #' @param taxon the index or name of a taxon to be compared
-#' @param group1 the identifier of the first group, numeric or character
-#' @param group2 the identifier of the second group, numeric or character
+#' @param groups a vector that provides for each sample its group membership (numeric or character)
+#' @param group1 the identifier of the first group (numeric or character)
+#' @param group2 the identifier of the second group (numeric or character)
 #' @param name1 the name to be displayed for the first group
 #' @param name2 the name to be displayed for the second group
 #'
-compareDistribs<-function(x, taxon, groups, group1=1, group2=2, name1="group1", name2="group2"){
+compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1="group1", name2="group2"){
   indices.group1=which(groups==group1)
   indices.group2=which(groups==group2)
   index=NA
