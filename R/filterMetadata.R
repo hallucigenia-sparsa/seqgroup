@@ -14,7 +14,7 @@ filterMetadata<-function(data, toFilter=c(), na.threshold=0, remove.neg=FALSE){
   if(!is.data.frame(data)){
     stop("Please provide a data frame.")
   }
-  onePerc=ncol(data)/100
+  onePerc=nrow(data)/100
   na.number.threshold=round(onePerc*na.threshold)
   print(paste("Allowed number of NAs:",na.number.threshold))
   indices.tokeep=c()
@@ -24,6 +24,7 @@ filterMetadata<-function(data, toFilter=c(), na.threshold=0, remove.neg=FALSE){
     values=unique(data[[name]])
     values=setdiff(values,NA)
     numberNA=length(which(is.na(data[[name]])))
+    #print(paste(name,":",numberNA))
     if(length(values)>1 && numberNA<=na.number.threshold){
       if(name %in% toFilter){
         print(paste("Skipping metadata item: ",name,sep=""))

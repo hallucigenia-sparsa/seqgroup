@@ -38,4 +38,5 @@ plotted in a separate bar plot.
 The returned network can be visualized with igraph's
 interactive network visualisation function tkplot or
 simply with igraph's plot function.
+TODO: support bnlearn
 }
