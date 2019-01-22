@@ -29,8 +29,8 @@
 #' @param labels an optional vector that provides for each sample a label to display
 #' @param time an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)
 #' @param hiddenSamples an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)
-#' @param dis dissimilarity or distance supported by vegan's vegdist function
-#' @param rda carry out an RDA instead of a PCoA
+#' @param dis dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)
+#' @param rda carry out an RDA instead of a PCoA using vegan's capscale function
 #' @param scale scale numeric metadata (subtract the mean and divide by standard deviation)
 #' @param doScree do a Scree plot
 #' @param topTaxa if larger than zero: show the top N taxa most strongly covarying with principal components as arrows in the PCoA if they are significant according to a permutation test
@@ -40,8 +40,8 @@
 #' @param centroidFactor centroid positions are multiplied with this factor
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
-#' @param xlim range shown on the x axis
-#' @param ylim range shown on the y axis
+#' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
+#' @param ylim range shown on the y axis, by default the minimum and maximum of the second selected component
 #' @param permut number of permutations for top-covarying taxa and envfit
 #' @param pAdjMethod method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values
 #' @param qvalThreshold threshold on multiple-testing corrected top-covarying taxon and envfit p-values
@@ -50,7 +50,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=c(-0.3,0.3), ylim=c(-0.3,0.3), permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
 
   if(rda && is.null(metadata)){
     stop("Metadata are needed for RDA!")
@@ -116,13 +116,19 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   pch.value=16
 
   if(rda){
-    pcoa.res=capscale(data.frame(t(abundances))~.,metadata,distance=dis, na.action = "na.omit")
+
+     pcoa.res=capscale(data.frame(t(abundances))~.,metadata,distance=dis, na.action = "na.omit")
 
   }else{
-
     # carry out PCoA
-    pcoa.res=capscale(data.frame(t(abundances))~1,distance=dis, na.action = "na.omit")
-
+    if(dis=="cor"){
+      # carry out standard PCA
+      # from vegan's doc: using correlation coefficients instead of covariances will give a more balanced ordination (scale=TRUE)
+      print("Carrying out PCA...")
+      pcoa.res=rda(data.frame(t(abundances)), scale=TRUE, na.action = "na.omit")
+    }else{
+      pcoa.res=capscale(data.frame(t(abundances))~1,distance=dis, na.action = "na.omit")
+    }
     if(!is.null(metadata) && topMetadata>0){
 
       # carry out envfit
@@ -162,8 +168,12 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   }
 
   # assign the right labels
-  xlab=paste("PCoA",dimensions[1]," [",round(pcoa.res$CA$eig[dimensions[1]],2),"]",sep="")
-  ylab=paste("PCoA",dimensions[2]," [",round(pcoa.res$CA$eig[dimensions[2]],2),"]",sep="")
+  redun.method="PCoA"
+  if(dis=="cor"){
+    redun.method="PCA"
+  }
+  xlab=paste(redun.method,dimensions[1]," [",round(pcoa.res$CA$eig[dimensions[1]],2),"]",sep="")
+  ylab=paste(redun.method,dimensions[2]," [",round(pcoa.res$CA$eig[dimensions[2]],2),"]",sep="")
 
   if(length(colors)>0){
     # use pre-assigned colors
@@ -171,7 +181,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       stop("There should be as many colors as samples in the color vector!")
     }
   }else{
-    colors="red"
+    colors=rep("gray",ncol(abundances))
     if(groupAttrib!=""){
       groups=metadata[[groupAttrib]]
       colors=assignColorsToGroups(groups,refName = refName, myColors = groupColors)
@@ -199,6 +209,16 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     }
     pch.value=pch.value[selected.sample.indices]
     #print(pch.value[20:50])
+  }
+
+  #print(selected.sample.indices)
+  #print(colors)
+  # determine range
+  if(is.null(xlim)){
+    xlim=range(pcoa.res$CA$u[selected.sample.indices,dimensions[1]])
+  }
+  if(is.null(ylim)){
+    ylim=range(pcoa.res$CA$u[selected.sample.indices,dimensions[2]])
   }
 
   plot(pcoa.res$CA$u[selected.sample.indices,dimensions], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)

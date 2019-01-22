@@ -10,8 +10,8 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
   time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
   scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
   arrowFactor = 0.5, metadataFactor = 1, centroidFactor = 1,
-  taxonColor = "brown", metadataColor = "blue", xlim = c(-0.3, 0.3),
-  ylim = c(-0.3, 0.3), permut = 1000, pAdjMethod = "BH",
+  taxonColor = "brown", metadataColor = "blue", xlim = NULL,
+  ylim = NULL, permut = 1000, pAdjMethod = "BH",
   qvalThreshold = 0.05, dimensions = c(1, 2), ...)
 }
 \arguments{
@@ -41,9 +41,9 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{hiddenSamples}{an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)}
 
-\item{dis}{dissimilarity or distance supported by vegan's vegdist function}
+\item{dis}{dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)}
 
-\item{rda}{carry out an RDA instead of a PCoA}
+\item{rda}{carry out an RDA instead of a PCoA using vegan's capscale function}
 
 \item{scale}{scale numeric metadata (subtract the mean and divide by standard deviation)}
 
@@ -63,9 +63,9 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{metadataColor}{the color of the metadata arrows and text}
 
-\item{xlim}{range shown on the x axis}
+\item{xlim}{range shown on the x axis, by default the minimum and maximum of the first selected component}
 
-\item{ylim}{range shown on the y axis}
+\item{ylim}{range shown on the y axis, by default the minimum and maximum of the second selected component}
 
 \item{permut}{number of permutations for top-covarying taxa and envfit}
 
