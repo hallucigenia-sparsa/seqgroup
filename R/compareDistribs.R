@@ -42,3 +42,24 @@ compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1="group
   hist(abundances2,breaks="FD",prob=TRUE,col=col2, border=col2,add=TRUE)
   legend("right",legend=c(name1,name2), lty = rep(1,2), col = c(col1,col2), merge = TRUE, bg = "white", text.col="black")
 }
+
+compareDistribsPure<-function(values1,values2, main="Comparison", name1="", name2=""){
+  w.out=wilcox.test(values1,values2)
+  col1=rgb(0,1,0,0.5)
+  col2=rgb(1,0,0,0.5)
+  # limits
+  xmax=max(values1,na.rm=TRUE)
+  xmin=min(values1,na.rm=TRUE)
+  ymax=max(values2,na.rm=TRUE)
+  ymin=min(values2,na.rm=TRUE)
+  max=max(xmax,ymax)
+  min=min(ymin,xmin)
+  xmaxD=max(hist(values1,breaks="FD",plot=FALSE)$density)
+  ymaxD=max(hist(values2,breaks="FD",plot=FALSE)$density)
+  maxD=max(xmaxD,ymaxD)
+  #maxD=maxD+0.5 # add a margin
+  title=paste(main,", \nWilcoxon p-value:",round(w.out$p.value,3),sep="")
+  hist(values1,breaks="FD",xlim=c(min,max), ylim=c(0,maxD), prob=TRUE,col=col1, border=col1,xlab="Abundance", main=title)
+  hist(values2,breaks="FD",prob=TRUE,col=col2, border=col2,add=TRUE)
+  legend("right",legend=c(name1,name2), lty = rep(1,2), col = c(col1,col2), merge = TRUE, bg = "white", text.col="black")
+}

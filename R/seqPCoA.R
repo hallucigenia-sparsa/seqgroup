@@ -3,7 +3,8 @@
 #' @description A wrapper around various PCoA-based analyses implemented in vegan. The wrapper can handle groups and
 #' metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, however envfit cannot deal with
 #' missing values, therefore if metadata are provided, they should be free of missing values.
-#' When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
+#'
+#' @details When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 #' groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
 #' The color vector is likewise extended if provided. If a clusters, time and/or labels vector is provided together with a referene, it has to refer to both data sets.
 #' Samples in the abundance matrix are appended after the reference samples, so cluster memberships, time points and/or labels have to be provided in the same order.
@@ -15,18 +16,21 @@
 #' In contrast, envfit p-values are computed for all metadata and multiple-testing correction is consequently applied to all metadata provided, though
 #' only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
 #' topMetadata ranks metadata by significance.
+#' The number in the axis label brackets refers to the proportion of variance explained as computed with vegan's eigenvals function.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
 #' @param rarefyRef rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ
 #' @param refName group name for reference samples
-#' @param metadata an optional data frame with metadata items, where samples are in the same order as in x, if provided and rda is FALSE, envfit is carried out
+#' @param metadata an optional data frame with metadata items, where samples are in the same order as in abundances; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
 #' @param groups an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided
 #' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent
 #' @param colors an optional vector of colors to be used to color samples; it overrides groupColors if provided
-#' @param clusters an optional vector that provides for each sample its cluster membership as an integer (cluster membership is visualized through shape, up to 10 different shapes are possible)
+#' @param clusters an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)
 #' @param labels an optional vector that provides for each sample a label to display
+#' @param sizes a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)
+#' @param size.legend a string displayed as a legend for size
 #' @param time an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)
 #' @param hiddenSamples an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)
 #' @param dis dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)
@@ -42,7 +46,8 @@
 #' @param metadataColor the color of the metadata arrows and text
 #' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
 #' @param ylim range shown on the y axis, by default the minimum and maximum of the second selected component
-#' @param permut number of permutations for top-covarying taxa and envfit
+#' @param permut number of permutations for top-covarying taxa; if NA, NULL or smaller than 1, no permutation test is carried out
+#' @param env.permut number of permutations for envfit
 #' @param pAdjMethod method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values
 #' @param qvalThreshold threshold on multiple-testing corrected top-covarying taxon and envfit p-values
 #' @param dimensions the principal components used for plotting, by default the first and second
@@ -50,7 +55,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
 
   if(rda && is.null(metadata)){
     stop("Metadata are needed for RDA!")
@@ -104,7 +109,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
         stop("Please provide time points for reference and abundances combined, with reference first.")
       }
     }
-  }
+  } # reference provided
 
   if(!is.null(metadata) && scale){
     numeric.metadata=getMetadataSubset(metadata,type="numeric")
@@ -113,7 +118,12 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     metadata=cbind(scaled.numeric.metadata,catbin.metadata)
   }
 
+  min.cex=0.5
+  max.cex=2.5
   pch.value=16
+  # 15=square, 16=circle, 17=triangle point up, 18=diamond, 25=triangle point down,
+  # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
+  clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
 
   if(rda){
 
@@ -132,7 +142,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     if(!is.null(metadata) && topMetadata>0){
 
       # carry out envfit
-      ef=envfit(pcoa.res,metadata,perm=permut, choices=dimensions)
+      ef=envfit(pcoa.res,metadata,perm=env.permut, choices=dimensions)
 
       # correct for multiple testing using code in http://www.davidzeleny.net/anadat-r/doku.php/en:indirect_ordination_suppl
       pvals.vectors=p.adjust(ef$vectors$pvals, method=pAdjMethod)
@@ -172,8 +182,12 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   if(dis=="cor"){
     redun.method="PCA"
   }
-  xlab=paste(redun.method,dimensions[1]," [",round(pcoa.res$CA$eig[dimensions[1]],2),"]",sep="")
-  ylab=paste(redun.method,dimensions[2]," [",round(pcoa.res$CA$eig[dimensions[2]],2),"]",sep="")
+  # proportion of variance explained
+  eig.sum=summary(eigenvals(pcoa.res))
+  var.explained.1=eig.sum[2,dimensions[[1]]] # second row of eigenvalue summary: proportion of variance explained
+  var.explained.2=eig.sum[2,dimensions[[2]]]
+  xlab=paste(redun.method,dimensions[1]," [",round(var.explained.1,2),"]",sep="")
+  ylab=paste(redun.method,dimensions[2]," [",round(var.explained.2,2),"]",sep="")
 
   if(length(colors)>0){
     # use pre-assigned colors
@@ -193,9 +207,6 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   # select indices of samples to show (if hiddenSamples is empty, this will be all)
   selected.sample.indices=setdiff(1:ncol(abundances),hiddenSamples)
 
-  # 15=square, 16=circle, 17=triangle point up, 18=diamond, 25=triangle point down,
-  # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
-  clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
   # assign cluster memberships as shapes
   if(length(clusters)>0){
     clusnum=length(unique(clusters))
@@ -203,9 +214,17 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       stop(paste("No more than",length(clus.pch.values),"clusters can be visualized."))
     }
     pch.value=c()
+    clustersymbol.lookup=list()
+    clus.values.counter=1
     for(clus.index in 1:length(clusters)){
-      pch.prop=clus.pch.values[clusters[clus.index]]
-      pch.value=c(pch.value,as.numeric(pch.prop))
+      current.clus=clusters[clus.index]
+      if(!(current.clus %in% names(clustersymbol.lookup))){
+        clustersymbol.lookup[[current.clus]]=clus.pch.values[clus.values.counter]
+        clus.values.counter=clus.values.counter+1
+      }
+    }
+    for(clus.index in 1:length(clusters)){
+      pch.value=c(pch.value,clustersymbol.lookup[[clusters[clus.index]]])
     }
     pch.value=pch.value[selected.sample.indices]
     #print(pch.value[20:50])
@@ -221,7 +240,20 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     ylim=range(pcoa.res$CA$u[selected.sample.indices,dimensions[2]])
   }
 
-  plot(pcoa.res$CA$u[selected.sample.indices,dimensions], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+  if(!is.null(sizes) || length(sizes)>0){
+    # shift into positive range
+    if(min(sizes)<0){
+      sizes=sizes-min(sizes) # - - value adds the valye
+    }
+    # scale between 0.5 and 2.5
+    sizes=(sizes-min(sizes))/(0.5*max(sizes)-min(sizes))
+    sizes=sizes+min.cex # make sure there is no dot of size zero
+    #print(range(sizes))
+  }else{
+    sizes=par()$cex # default size
+  }
+
+  plot(pcoa.res$CA$u[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
 
   # add sample labels if requested
   if(length(labels)>0){
@@ -263,35 +295,46 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     pvalues=c()
     U.sub=U[sorted.top.indices,]
     Y.sub=Y[,sorted.top.indices]
-    # taxa vs permutations
-    permuted.norms=matrix(NA,nrow=ncol(Y.sub),ncol=permut)
-    # carry out permutation test
-    for(iteration in 1:permut){
-      # shuffle abundances separately per column (in Y, taxa are columns)
-      Y.rand=apply(Y.sub,2,sample)
-      # only look at top covarying taxa
-      S.rand=cov(Y.rand,ev.stand)
-      # scale the shuffled S by eigen values
-      U.rand <- S.rand %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
-      # taxon arrows are defined by U, which has as many rows as taxa and as many columns as selected eigen vectors
-      # compute arrow length as vector norm for each row (each row represents one arrow)
-      permuted.norms[,iteration]=apply(U.rand,1,myNorm)
+    was.permuted=FALSE
+    # if requested, carry out permutations
+    if(!is.null(permut) && !is.na(permut) && permut>0){
+      was.permuted=TRUE
+      # taxa vs permutations
+      permuted.norms=matrix(NA,nrow=ncol(Y.sub),ncol=permut)
+      # carry out permutation test
+      for(iteration in 1:permut){
+        # shuffle abundances separately per column (in Y, taxa are columns)
+        Y.rand=apply(Y.sub,2,base::sample)
+        # only look at top covarying taxa
+        S.rand=cov(Y.rand,ev.stand)
+        # scale the shuffled S by eigen values
+        U.rand <- S.rand %*% diag((pcoa.res$CA$eig[dimensions]/(n-1))^(-0.5))
+        # taxon arrows are defined by U, which has as many rows as taxa and as many columns as selected eigen vectors
+        # compute arrow length as vector norm for each row (each row represents one arrow)
+        permuted.norms[,iteration]=apply(U.rand,1,myNorm)
+      }
+      # compute signficance of vector norms
+      for(taxon.index in 1:ncol(Y.sub)){
+        obs.norm=norms[taxon.index]
+        # check how many permuted norms are larger than observed norm
+        r=length(which(permuted.norms[taxon.index,]>obs.norm))
+        # compute parameter-free p-value
+        pvalues=c(pvalues,(r+1)/(permut+1))
+      }
+      # adjust p-values for multiple testing and discard corrected p-values below selected significance level
+      pvalues=p.adjust(pvalues,method=pAdjMethod)
+      sig.pvalue.indices=which(pvalues<qvalThreshold)
+      # only keep significant top covarying taxa
+      U.selected=U.sub[sig.pvalue.indices,]
+    } # end permutation test
+    else{
+      U.selected=U.sub
+      sig.pvalue.indices=c()
     }
-    # compute signficance of vector norms
-    for(taxon.index in 1:ncol(Y.sub)){
-      obs.norm=norms[taxon.index]
-      # check how many permuted norms are larger than observed norm
-      r=length(which(permuted.norms[taxon.index,]>obs.norm))
-      # compute parameter-free p-value
-      pvalues=c(pvalues,(r+1)/(permut+1))
-    }
-    # adjust p-values for multiple testing and discard corrected p-values below selected significance level
-    pvalues=p.adjust(pvalues,method=pAdjMethod)
-    sig.pvalue.indices=which(pvalues<qvalThreshold)
-    # only keep significant top covarying taxa
-    U.selected=U.sub[sig.pvalue.indices,]
-    if(length(sig.pvalue.indices)>0){
-      print(paste("Among the top ",topTaxa," covarying taxa, ",length(sig.pvalue.indices)," are significant.",sep=""))
+    if(length(sig.pvalue.indices)>0 || !was.permuted){
+      if(was.permuted){
+        print(paste("Among the top ",topTaxa," covarying taxa, ",length(sig.pvalue.indices)," are significant.",sep=""))
+      }
       arrows(0, 0, U.selected[, 1] * arrowFactor, U.selected[, 2] * arrowFactor, col = taxonColor,length = 0.1, lty=2)
 
       shift=0.1
@@ -306,7 +349,9 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       }
       text(U.selected*arrowFactor, rownames(U.selected), cex = 0.9, col = taxonColor)
     }else{
-      warning("None of the top-covarying taxa is significant.")
+      if(was.permuted){
+        warning("None of the top-covarying taxa is significant.")
+      }
     }
   }
 
@@ -353,10 +398,21 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   }
 
   if(length(groups)>0){
-    legend("topright",legend=unique(groups[selected.sample.indices]),cex=0.9, pch = rep("*",length(unique(groups[selected.sample.indices]))), col = unique(colors[selected.sample.indices]), bg = "white", text.col="black")
+    # cex=0.9
+    legend("topright",legend=unique(groups[selected.sample.indices]),cex=0.6, pch = rep("*",length(unique(groups[selected.sample.indices]))), col = unique(colors[selected.sample.indices]), bg = "white", text.col="black")
   }
   if(length(clusters)>0){
     legend("topleft",legend=unique(clusters[selected.sample.indices]),cex=0.9, pch = unique(pch.value), col = "black", bg = "white", text.col="black")
+  }
+  # 1 = default size
+  if(length(sizes)>1){
+    min.legend="min"
+    max.legend="max"
+    if(size.legend!=""){
+      min.legend=paste(min.legend," ",size.legend,sep="")
+      max.legend=paste(max.legend," ",size.legend,sep="")
+    }
+    legend("bottomleft",legend=c(min.legend,max.legend),pt.cex=c(min.cex,max.cex), pch = c(1,1), col = "black", bg = "white", text.col="black")
   }
 
 }

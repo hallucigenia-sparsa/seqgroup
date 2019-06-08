@@ -7,12 +7,13 @@
 seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
   refName = "ref", metadata = NULL, groupAttrib = "", groups = c(),
   groupColors = NULL, colors = c(), clusters = c(), labels = c(),
-  time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
-  scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
-  arrowFactor = 0.5, metadataFactor = 1, centroidFactor = 1,
-  taxonColor = "brown", metadataColor = "blue", xlim = NULL,
-  ylim = NULL, permut = 1000, pAdjMethod = "BH",
-  qvalThreshold = 0.05, dimensions = c(1, 2), ...)
+  sizes = c(), size.legend = "", time = c(), hiddenSamples = c(),
+  dis = "bray", rda = FALSE, scale = FALSE, doScree = FALSE,
+  topTaxa = 10, topMetadata = 10, arrowFactor = 0.5,
+  metadataFactor = 1, centroidFactor = 1, taxonColor = "brown",
+  metadataColor = "blue", xlim = NULL, ylim = NULL, permut = 1000,
+  env.permut = 1000, pAdjMethod = "BH", qvalThreshold = 0.05,
+  dimensions = c(1, 2), ...)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -23,7 +24,7 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{refName}{group name for reference samples}
 
-\item{metadata}{an optional data frame with metadata items, where samples are in the same order as in x, if provided and rda is FALSE, envfit is carried out}
+\item{metadata}{an optional data frame with metadata items, where samples are in the same order as in abundances; if provided and rda is FALSE, envfit is carried out}
 
 \item{groupAttrib}{optional: the name of a metadata item that refers to a vector that provides for each sample its group membership}
 
@@ -33,9 +34,13 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{colors}{an optional vector of colors to be used to color samples; it overrides groupColors if provided}
 
-\item{clusters}{an optional vector that provides for each sample its cluster membership as an integer (cluster membership is visualized through shape, up to 10 different shapes are possible)}
+\item{clusters}{an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)}
 
 \item{labels}{an optional vector that provides for each sample a label to display}
+
+\item{sizes}{a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)}
+
+\item{size.legend}{a string displayed as a legend for size}
 
 \item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)}
 
@@ -67,7 +72,9 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{ylim}{range shown on the y axis, by default the minimum and maximum of the second selected component}
 
-\item{permut}{number of permutations for top-covarying taxa and envfit}
+\item{permut}{number of permutations for top-covarying taxa; if NA, NULL or smaller than 1, no permutation test is carried out}
+
+\item{env.permut}{number of permutations for envfit}
 
 \item{pAdjMethod}{method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values}
 
@@ -81,6 +88,8 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 A wrapper around various PCoA-based analyses implemented in vegan. The wrapper can handle groups and
 metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, however envfit cannot deal with
 missing values, therefore if metadata are provided, they should be free of missing values.
+}
+\details{
 When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
 groups are automatically extended such that reference samples are assigned to a single group with name refName, which is colored in gray.
 The color vector is likewise extended if provided. If a clusters, time and/or labels vector is provided together with a referene, it has to refer to both data sets.
@@ -93,4 +102,5 @@ the norm of the vectors resulting from multiplying the standardized eigen vector
 In contrast, envfit p-values are computed for all metadata and multiple-testing correction is consequently applied to all metadata provided, though
 only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
 topMetadata ranks metadata by significance.
+The number in the axis label brackets refers to the proportion of variance explained as computed with vegan's eigenvals function.
 }
