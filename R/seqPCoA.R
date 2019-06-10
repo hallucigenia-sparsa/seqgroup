@@ -41,7 +41,7 @@
 #' @param topMetadata if larger than zero, metadata provided and rda false: show the top N most significant numeric metadata as arrows and the top N most significant factor metadata as text in the PCoA
 #' @param arrowFactor the length of taxon arrows (determined by scaled covariance) is multiplied with this factor
 #' @param metadataFactor the length of numeric metadata arrows (determined by Pearson correlation) is multiplied with this factor
-#' @param centroidFactor centroid positions are multiplied with this factor
+#' @param centroidFactor centroid positions (representing categoric metadata) are multiplied with this factor
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
 #' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
@@ -56,6 +56,9 @@
 #'
 
 seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
+
+  metadata.to.plot=c()
+  #metadata.to.plot=c("IS_TOTAL","PCSG")
 
   if(rda && is.null(metadata)){
     stop("Metadata are needed for RDA!")
@@ -124,6 +127,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   # 15=square, 16=circle, 17=triangle point up, 18=diamond, 25=triangle point down,
   # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
   clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
+  display.size.legend=FALSE
 
   if(rda){
 
@@ -143,7 +147,15 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
 
       # carry out envfit
       ef=envfit(pcoa.res,metadata,perm=env.permut, choices=dimensions)
-
+      #print(ef$vectors)
+      #print(names(ef$vectors$r))
+      if(length(metadata.to.plot)>0){
+        for(metadatum.to.plot in metadata.to.plot){
+          index.metadatum.to.plot=which(names(ef$vectors$r)==metadatum.to.plot)
+          print(paste(sep="","R2 of ",metadatum.to.plot,": ",ef$vectors$r[index.metadatum.to.plot]))
+          print(paste(sep="","P-value (not corrected) of ",metadatum.to.plot,": ",ef$vectors$pvals[index.metadatum.to.plot]))
+        }
+      }
       # correct for multiple testing using code in http://www.davidzeleny.net/anadat-r/doku.php/en:indirect_ordination_suppl
       pvals.vectors=p.adjust(ef$vectors$pvals, method=pAdjMethod)
       pvals.factors=p.adjust(ef$factors$pvals, method=pAdjMethod)
@@ -241,6 +253,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   }
 
   if(!is.null(sizes) || length(sizes)>0){
+    display.size.legend=TRUE
     # shift into positive range
     if(min(sizes)<0){
       sizes=sizes-min(sizes) # - - value adds the valye
@@ -250,7 +263,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     sizes=sizes+min.cex # make sure there is no dot of size zero
     #print(range(sizes))
   }else{
-    sizes=par()$cex # default size
+    sizes=rep(par()$cex,length(selected.sample.indices)) # default size
   }
 
   plot(pcoa.res$CA$u[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
@@ -356,7 +369,14 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   }
 
   if(!is.null(metadata) && topMetadata>0){
-    if(length(indices.vectors)>0){
+    if(length(indices.vectors)>0 || length(metadata.to.plot)>0){
+      if(length(metadata.to.plot) > 0){
+        #print(names(ef$vectors$r[pvals.vectors.sorted$ix]))
+        for(metadatum.to.plot in metadata.to.plot){
+          index.metadatum.to.plot=which(names(ef$vectors$r[pvals.vectors.sorted$ix])==metadatum.to.plot)
+          indices.vectors=c(indices.vectors,index.metadatum.to.plot)
+        }
+      }
       # add arrows for numeric metadata
       ef.arrows=as.matrix(ef$vectors$arrows[pvals.vectors.sorted$ix[indices.vectors],dimensions])
       if(length(indices.vectors)==1){
@@ -405,7 +425,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     legend("topleft",legend=unique(clusters[selected.sample.indices]),cex=0.9, pch = unique(pch.value), col = "black", bg = "white", text.col="black")
   }
   # 1 = default size
-  if(length(sizes)>1){
+  if(display.size.legend==TRUE){
     min.legend="min"
     max.legend="max"
     if(size.legend!=""){
