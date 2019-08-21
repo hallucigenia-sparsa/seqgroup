@@ -10,15 +10,6 @@ If you did not yet install devtools, please install it first.
 install.packages("devtools")
 ```
 
-To be able to install seqgroup, please make sure to 
-install the latest devtools version from github:
-
-```r
-devtools::install_github("r-lib/devtools")
-```
-
-Please install the DirichletMultinomial R package from [Bioconductor](http://bioconductor.org/packages/release/bioc/html/DirichletMultinomial.html).
-
 Then you can install seqgroup with the following commands:
 
 ```r
@@ -31,3 +22,8 @@ Now, you can load the seqgroup R package:
 ```r
 library(seqgroup)
 ```
+
+### Development status
+
+[![Travis-CI Build Status](https://travis-ci.org/hallucigenia-sparsa/seqgroup.svg?branch=master)](https://travis-ci.org/hallucigenia-sparsa/seqgroup)
+
