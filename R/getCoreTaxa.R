@@ -1,4 +1,5 @@
-#' List the indices of all taxa that occur at least min.occ times in each group.
+#' @title List core taxa across groups
+#' @description List the indices of all taxa that occur at least min.occ times in each group.
 #'
 #' @param x an abundance matrix where rows are taxa and columns samples
 #' @param groups group membership vector with as many entries as abundances has samples

@@ -13,7 +13,7 @@ exportToCoNet(abundances, metadata = NULL, lineages = NULL,
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
-\item{metadata}{an optional data frame with metadata items where sample names match sample names in abundances; data types (factor vs numeric) are supposed to be correct}
+\item{metadata}{an optional data frame with metadata items as columns where sample names match sample names in abundances; data types (factor vs numeric) are supposed to be correct}
 
 \item{lineages}{an optional lineage matrix where row names match row names of taxa; taxa must be provided in the same order as in abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (not all are required)}
 
@@ -45,6 +45,4 @@ If binary metadata are provided as strings, the strings encoding 0 (no) and 1 (y
 If lineages are provided, they are exported into a CoNet metadata file, which can be used for all group-specific
 data sets, in case groups are provided. Either the last column or the row names of the lineage matrix have to match the
 row names of the abundance matrix.
-
-TODO: treat special characters
 }

@@ -8,10 +8,8 @@
 #' data sets, in case groups are provided. Either the last column or the row names of the lineage matrix have to match the
 #' row names of the abundance matrix.
 #'
-#' TODO: treat special characters
-#'
 #' @param abundances a matrix with taxa as rows and samples as columns
-#' @param metadata an optional data frame with metadata items where sample names match sample names in abundances; data types (factor vs numeric) are supposed to be correct
+#' @param metadata an optional data frame with metadata items as columns where sample names match sample names in abundances; data types (factor vs numeric) are supposed to be correct
 #' @param lineages an optional lineage matrix where row names match row names of taxa; taxa must be provided in the same order as in abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (not all are required)
 #' @param groups an optional group membership vector with as many entries as abundances has samples; if provided, data are exported separately for each group
 #' @param export.folder the export folder into which files should be saved

@@ -1,6 +1,6 @@
-#' Merge ATC codes
+#' @title Merge ATC codes
 #'
-#' ATC codes are a classification system for therapeutic chemicals, see
+#' @description ATC codes are a classification system for therapeutic chemicals, see
 #' https://en.wikipedia.org/wiki/Anatomical_Therapeutic_Chemical_Classification_System
 #'
 #' @param data matrix with only zeros or ones, with ATC codes as rows and samples as columns

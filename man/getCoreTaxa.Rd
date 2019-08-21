@@ -2,7 +2,7 @@
 % Please edit documentation in R/getCoreTaxa.R
 \name{getCoreTaxa}
 \alias{getCoreTaxa}
-\title{List the indices of all taxa that occur at least min.occ times in each group.}
+\title{List core taxa across groups}
 \usage{
 getCoreTaxa(x, groups = c(), min.occ = 1)
 }

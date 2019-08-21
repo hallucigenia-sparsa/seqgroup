@@ -20,6 +20,7 @@ Imports:
   phyloseq,
   ggpubr,
   dirmult,
-  SpiecEasi
-Remotes: zdk123/SpiecEasi
+  SpiecEasi,
+  bnlearn
+Remotes: zdk123/SpiecEasi, bioc::release/DirichletMultinomial, bioc::release/phyloseq
 RoxygenNote: 6.1.1

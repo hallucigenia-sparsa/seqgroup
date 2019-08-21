@@ -4,39 +4,47 @@
 \alias{buildNetwork}
 \title{Build a microbial network}
 \usage{
-buildNetwork(abundances, lineages, method = "mb", repNum = 20,
-  nameLevel = "Genus", colorLevel = "Class", widthFactor = 50)
+buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
+  minStrength = 0.5, alpha = 0.05, directed = FALSE,
+  nameLevel = "Genus", colorLevel = "Class", widthFactor = 10)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
-\item{lineages}{a matrix with lineages in the phyloseq format}
+\item{lineages}{a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)}
 
-\item{method}{mb and glasso, supported by SPIEC-EASI}
+\item{method}{mb and glasso (SPIEC-EASI), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc and si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
 
-\item{repNum}{the number of bootstrap iterations in SPIEC-EASI}
+\item{repNum}{the number of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods}
 
-\item{nameLevel}{the taxonomic level used for node names}
+\item{minStrength}{bnlearn only: the minimum probability for an arc to appear across bootstraps (only applicable if repNum is set larger 1)}
 
-\item{colorLevel}{the taxonomic level used for node colors}
+\item{alpha}{p-value threshold for bnlearn (ignored in methods aracne, hc, tabu, rsmax2, mmhc and h2pc)}
 
-\item{widthFactor}{edge width scaling factor (for SPIEC-EASI, the width is the abolute of the regression coefficients)}
+\item{directed}{bnlearn only: infer a directed network (hc, tabu, rsmax2, mmhc and h2pc only infer directed networks, aracne only undirected networks)}
+
+\item{nameLevel}{the taxonomic level used for node names (only if lineages provided)}
+
+\item{colorLevel}{the taxonomic level used for node colors (only if lineages provided)}
+
+\item{widthFactor}{edge width scaling factor}
 }
 \value{
-the SPIEC-EASI igraph object
+igraph object
 }
 \description{
 Wrapper for microbial network inference methods.
-For the moment, only SPIEC-EASI is supported.
-Abundances are assumed to have been already filtered.
+SPIEC-EASI and bnlearn are supported.
+Abundances are assumed to have been already filtered and transformed.
 The function returns the network as an igraph object,
 with nodes labeled and colored at the selected taxonomic levels
-and edges in red or green, depending on whether they
-represent negative or positive associations. Edge thickness
-represents association strength. The color code for the node colors is
-plotted in a separate bar plot.
-The returned network can be visualized with igraph's
-interactive network visualisation function tkplot or
-simply with igraph's plot function.
-TODO: support bnlearn
+and, for SPIEC-EASI, edges in red or green, depending on whether they
+represent negative or positive associations. For SPIEC-EASI, edge width
+represents the abolute of the regression coefficients, whereas for bnlearn, it represents
+the probability of an arc to re-appear across bootstrap iterations.
+If applicable, the color code for the node colors is plotted in a separate bar plot.
+SPIEC-EASI returns undirected graphs, whereas bnlearn methods support the inference
+of directed graphs. In general, SPIEC-EASI methods are faster than bnlearn methods.
+The returned network can be visualized with igraph's interactive network visualisation
+function tkplot or simply with igraph's plot function.
 }

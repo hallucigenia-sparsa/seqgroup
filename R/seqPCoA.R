@@ -22,7 +22,7 @@
 #' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
 #' @param rarefyRef rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ
 #' @param refName group name for reference samples
-#' @param metadata an optional data frame with metadata items, where samples are in the same order as in abundances; if provided and rda is FALSE, envfit is carried out
+#' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
 #' @param groups an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided
 #' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent

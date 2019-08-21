@@ -24,7 +24,7 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{refName}{group name for reference samples}
 
-\item{metadata}{an optional data frame with metadata items, where samples are in the same order as in abundances; if provided and rda is FALSE, envfit is carried out}
+\item{metadata}{an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out}
 
 \item{groupAttrib}{optional: the name of a metadata item that refers to a vector that provides for each sample its group membership}
 
@@ -62,7 +62,7 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{metadataFactor}{the length of numeric metadata arrows (determined by Pearson correlation) is multiplied with this factor}
 
-\item{centroidFactor}{centroid positions are multiplied with this factor}
+\item{centroidFactor}{centroid positions (representing categoric metadata) are multiplied with this factor}
 
 \item{taxonColor}{the color of the taxon arrows and text}
 
