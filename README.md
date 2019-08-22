@@ -1,6 +1,6 @@
 # seqgroup
 
-The seqgroup R package provides functions that support the analysis of metadata and groups in microbial sequencing data.
+The seqgroup R package offers a collection of functions that support the analysis of microbial sequencing data with a group structure.
 
 ### Installation
 
