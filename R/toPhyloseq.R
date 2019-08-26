@@ -8,8 +8,27 @@
 #' @param dummyLineages assign dummy lineages; only if no lineages are provided and a lineageSource is given
 #' @param lineageSource a phyloseq object with known lineages, e.g. GlobalPatterns (phyloseq preloaded data that can be loaded with data(GlobalPatterns)), to be used for random lineage assignment
 #' @return phyloseq object
+#' @examples
+#' data(ibd_taxa)
+#' data(ibd_metadata)
+#' data(ibd_lineages)
+#' phyloseq.obj=toPhyloseq(ibd_taxa,metadata=ibd_metadata,lineages=ibd_lineages)
+#' phyloseq.obj
 #' @export
 toPhyloseq<-function(abundances, metadata=NULL, lineages=NULL, assignSampleNames=FALSE, dummyMetadata=FALSE, dummyLineages=FALSE, lineageSource=NULL){
+
+  if(!(is.null(metadata))){
+    if(ncol(abundances)!=nrow(metadata)){
+     stop("There should be as many metadata rows as there are columns in abundances!")
+    }
+    if(is.matrix(metadata)){
+      metadata=as.data.frame(metadata)
+    }
+  }
+
+  if(!is.null(lineages)){
+    lineages=as.matrix(lineages)
+  }
 
   # assign taxon names if necessary
   if(is.null(rownames(abundances))){

@@ -11,9 +11,10 @@
 #' the probability of an arc to re-appear across bootstrap iterations.
 #' If applicable, the color code for the node colors is plotted in a separate bar plot.
 #' SPIEC-EASI returns undirected graphs, whereas bnlearn methods support the inference
-#' of directed graphs. In general, SPIEC-EASI methods are faster than bnlearn methods.
+#' of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 #' The returned network can be visualized with igraph's interactive network visualisation
-#' function tkplot or simply with igraph's plot function.
+#' function tkplot or simply with igraph's plot function. When RCy3 is installed and Cytoscape is open,
+#' the graph can also be sent to Cytoscape directly with RCy3's function createNetworkFromIgraph().
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param lineages a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)
@@ -26,6 +27,14 @@
 #' @param colorLevel the taxonomic level used for node colors (only if lineages provided)
 #' @param widthFactor edge width scaling factor
 #' @return igraph object
+#' @examples
+#' data(ibd_taxa)
+#' data(ibd_lineages)
+#' top.indices=sort(rowSums(ibd_taxa),decreasing = TRUE,index.return=TRUE)$ix[1:30]
+#' taxa=ibd_taxa[top.indices,]
+#' lineages=ibd_lineages[top.indices,]
+#' hc.out=buildNetwork(taxa,lineages,method="hc",nameLevel="species")
+#' plot(hc.out)
 #' @export
 
 buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStrength=0.5, alpha=0.05, directed=FALSE, nameLevel="Genus", colorLevel="Class", widthFactor=10){
@@ -132,7 +141,7 @@ buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStren
     }
 
     # if graph is entirely directed, report overall goodness of fit and extract edge strengths
-    if(directed(bnlearn.out)){
+    if(bnlearn::directed(bnlearn.out)){
       fitted=bn.fit(bnlearn.out,bnlearn.data)
       print(paste("logLik:",logLik(fitted,bnlearn.data)))
       print(paste("AIC:",AIC(fitted,bnlearn.data)))
@@ -164,6 +173,8 @@ colorGraph<-function(result.graph, otu.ids=c(),lineages=NULL,nameLevel="",colorL
     assignedColors=assignColorsToGroups(colorgroups, returnMap=TRUE)
     nodecolors=assignedColors$colors
     #print(assignedColors$colorMap)
+    #print(length(V(result.graph)))
+    #print(length(nodenames))
     V(result.graph)$name=nodenames
     V(result.graph)$color=nodecolors
     unique.colors=c()

@@ -44,7 +44,17 @@ represents the abolute of the regression coefficients, whereas for bnlearn, it r
 the probability of an arc to re-appear across bootstrap iterations.
 If applicable, the color code for the node colors is plotted in a separate bar plot.
 SPIEC-EASI returns undirected graphs, whereas bnlearn methods support the inference
-of directed graphs. In general, SPIEC-EASI methods are faster than bnlearn methods.
+of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 The returned network can be visualized with igraph's interactive network visualisation
-function tkplot or simply with igraph's plot function.
+function tkplot or simply with igraph's plot function. When RCy3 is installed and Cytoscape is open,
+the graph can also be sent to Cytoscape directly with RCy3's function createNetworkFromIgraph().
+}
+\examples{
+data(ibd_taxa)
+data(ibd_lineages)
+top.indices=sort(rowSums(ibd_taxa),decreasing = TRUE,index.return=TRUE)$ix[1:30]
+taxa=ibd_taxa[top.indices,]
+lineages=ibd_lineages[top.indices,]
+hc.out=buildNetwork(taxa,lineages,method="hc",nameLevel="species")
+plot(hc.out)
 }

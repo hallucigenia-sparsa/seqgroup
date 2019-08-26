@@ -29,3 +29,10 @@ phyloseq object
 \description{
 Convert abundances to phyloseq object
 }
+\examples{
+data(ibd_taxa)
+data(ibd_metadata)
+data(ibd_lineages)
+phyloseq.obj=toPhyloseq(ibd_taxa,metadata=ibd_metadata,lineages=ibd_lineages)
+phyloseq.obj
+}

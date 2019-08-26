@@ -21,6 +21,18 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   if(plot.type=="intravsinter" && method=="DM"){
     stop("The intravsinter plot type is not supported for method DM.")
   }
+  if(length(groups)==0){
+    warning("Empty group vector provided. All samples are assigned to the same group.")
+    groups=rep("all",ncol(abundances))
+  }
+  if(property=="richness"){
+    if(!is.whole.matrix(abundances)){
+      vec=as.vector(abundances)
+      scaling.factor=1/min(vec[vec!=0])
+      warning(paste("Richness estimation requires counts; matrix is scaled to integers using factor:",scaling.factor))
+      abundances=round(abundances*scaling.factor)
+    }
+  }
   if(property!="beta"){
     method=""
   }
@@ -57,7 +69,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
           ylab="Bray Curtis dissimilarity"
           dissimMat=as.matrix(vegdist(t(group.data),method="bray"))
           dist=as.matrix(vegdist(t(group.data),method="bray"))
-          pergroupdissim[[paste("group",group,sep="")]]=dist[lower.tri(dist)]
+          pergroupdissim[[as.character(group)]]=dist[lower.tri(dist)] # paste("group",group,sep="")
           # average beta diversity
           if(avg!="none"){
             if(avg=="median"){
@@ -101,7 +113,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
         }else if(avg=="median"){
           groupspecavgprops=c(groupspecavgprops,median(groupspecdissim))
         }else if(avg=="none"){
-          pergroupdissim[[paste("group",group,sep="")]]=groupspecdissim
+          pergroupdissim[[as.character(group)]]=groupspecdissim
         }
       }
     }else{
@@ -250,6 +262,24 @@ listToMat<-function(groupprops=list()){
   return(mat)
 }
 
+# test whether matrix only contains integers.
+is.whole.matrix<-function(x){
+  if(length(which(apply(x,2,is.whole)==FALSE))>0){
+    return(FALSE)
+  }else{
+    return(TRUE)
+  }
+}
+
+# taken from: https://stat.ethz.ch/pipermail/r-help/2003-April/032471.html
+is.whole <- function(a, tol = 1e-7) {
+  is.eq <- function(x,y) {
+    r <- all.equal(x,y, tol=tol)
+    is.logical(r) && r
+  }
+  (is.numeric(a) && is.eq(a, floor(a))) ||
+    (is.complex(a) && {ri <- c(Re(a),Im(a)); is.eq(ri, floor(ri))})
+}
 
 #' @title Compute evenness using Sheldon's index
 #'
