@@ -7,7 +7,7 @@
 assignMetadataTypes(data, categoric = c())
 }
 \arguments{
-\item{data}{a metadata matrix with rows as samples and columns as items or a dataframe}
+\item{data}{a metadata matrix with rows as samples and columns as items or a dataframe with metadata items as columns}
 
 \item{categoric}{metadata items to be treated as categoric data}
 }

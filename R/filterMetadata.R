@@ -61,7 +61,7 @@ filterMetadata<-function(data, toFilter=c(), na.threshold=0, remove.neg=FALSE){
 #' Note that a message is printed to indicate which metadata type was assigned and to
 #' warn about numeric metadata with non-numeric values.
 #'
-#' @param data a metadata matrix with rows as samples and columns as items or a dataframe
+#' @param data a metadata matrix with rows as samples and columns as items or a dataframe with metadata items as columns
 #' @param categoric metadata items to be treated as categoric data
 #' @export
 assignMetadataTypes<-function(data, categoric=c()){

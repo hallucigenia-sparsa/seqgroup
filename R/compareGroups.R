@@ -12,9 +12,14 @@
 #' @param subsample for intravsinter plot type: subsample to have as many intra-group as inter-group pairs prior to performing a Wilcoxon test
 #' @param xlab the x axis label
 #' @param pvalViz if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr
-#'
+#' @examples
+#' data("ibd_taxa")
+#' data("ibd_metadata")
+#' groups=as.vector(ibd_metadata$Diagnosis)
+#' compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
 #' @export
 compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="Groups", pvalViz=FALSE){
+  supported.properties=c("richness","evenness","alpha","beta")
   if(plot.type=="intravsinter" && property!="beta"){
     stop("The intravsinter plot type is only supported for beta diversity!")
   }
@@ -24,6 +29,9 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   if(length(groups)==0){
     warning("Empty group vector provided. All samples are assigned to the same group.")
     groups=rep("all",ncol(abundances))
+  }
+  if(method %in% supported.properties){
+    stop(paste("The method parameter specifies the way in which beta diversity is computed. Please use the property parameter."))
   }
   if(property=="richness"){
     if(!is.whole.matrix(abundances)){
@@ -208,6 +216,8 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
             ggplot(df_melt, aes(variable,value))+geom_boxplot()+stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
           }
         }else{
+          #print(dim(mat))
+          #print(colnames(mat))
           boxplot(mat,ylab=ylab, main=main, xlab=xlab, notch=FALSE,ylim=ylim) # border=colors
           for(i in 1:ncol(mat)){
             points(rep(i,length(mat[,i])),mat[,i])

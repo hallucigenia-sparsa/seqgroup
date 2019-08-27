@@ -52,6 +52,17 @@
 #' @param qvalThreshold threshold on multiple-testing corrected top-covarying taxon and envfit p-values
 #' @param dimensions the principal components used for plotting, by default the first and second
 #' @param \\dots Additional arguments passed to plot()
+#' @examples
+#' data("ibd_taxa")
+#' data("ibd_metadata")
+#' ibd_metadata=assignMetadataTypes(ibd_metadata,categoric=c("SRA_metagenome_name","Diagnosis"))
+#' seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
+#' # remove 65 samples with missing calprotectin measurements or other missing values in the metadata
+#' na.indices=unique(which(is.na(ibd_metadata),arr.ind=TRUE)[,1])
+#' indices.to.keep=setdiff(1:nrow(ibd_metadata),na.indices)
+#' ibd_metadata=ibd_metadata[indices.to.keep,]
+#' ibd_taxa=ibd_taxa[,indices.to.keep]
+#' seqPCoA(ibd_taxa,metadata=ibd_metadata,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
 #' @export
 #'
 

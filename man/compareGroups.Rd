@@ -37,3 +37,9 @@ compareGroups(abundances, property = "beta", method = "dissim",
 \description{
 Compare diversity-related properties across groups
 }
+\examples{
+data("ibd_taxa")
+data("ibd_metadata")
+groups=as.vector(ibd_metadata$Diagnosis)
+compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
+}

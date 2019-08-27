@@ -104,3 +104,15 @@ only the selected number of most significant metadata are shown. Thus, topTaxa r
 topMetadata ranks metadata by significance.
 The number in the axis label brackets refers to the proportion of variance explained as computed with vegan's eigenvals function.
 }
+\examples{
+data("ibd_taxa")
+data("ibd_metadata")
+ibd_metadata=assignMetadataTypes(ibd_metadata,categoric=c("SRA_metagenome_name","Diagnosis"))
+seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
+# remove 65 samples with missing calprotectin measurements or other missing values in the metadata
+na.indices=unique(which(is.na(ibd_metadata),arr.ind=TRUE)[,1])
+indices.to.keep=setdiff(1:nrow(ibd_metadata),na.indices)
+ibd_metadata=ibd_metadata[indices.to.keep,]
+ibd_taxa=ibd_taxa[,indices.to.keep]
+seqPCoA(ibd_taxa,metadata=ibd_metadata,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
+}

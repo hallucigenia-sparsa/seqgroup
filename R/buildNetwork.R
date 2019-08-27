@@ -184,11 +184,11 @@ colorGraph<-function(result.graph, otu.ids=c(),lineages=NULL,nameLevel="",colorL
       unique.names=c(unique.names,name)
     }
     values=rep(1,length(unique.names))
-    pre.par=par() # save par values
+    pre.mar=par()$mar # save mar values
     par(mar=c(2,14,2,2)) # adjust margins for barplot
     # plot node color legend
     barplot(values, horiz=TRUE, names.arg = unique.names,las=2,xlim=c(0,10), xaxt="n", col=unique.colors, main=paste(colorLevel,"legend"))
-    par=pre.par # restore default par
+    par(mar=pre.mar) # restore previous mar
   }else{
     V(result.graph)$color="white"
   }
