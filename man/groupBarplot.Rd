@@ -7,8 +7,7 @@
 groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
   group.color.map = NULL, topTaxa = 10, sortGroupwise = TRUE,
   randSampleNum = NA, summedTaxonColor = "#a9a9a9",
-  extendTaxonColorMap = FALSE, legend = TRUE, legend.shift = 0.25,
-  ...)
+  extendTaxonColorMap = FALSE, legend = TRUE, legend.shift = 1, ...)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -31,12 +30,14 @@ groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
 
 \item{legend}{add a legend with the color code}
 
-\item{legend.shift}{decrease this parameter to shift the legend further to the right}
+\item{legend.shift}{increase/decrease this parameter to shift the color legend further to the right/left}
 
 \item{\\dots}{Additional arguments passed to plot()}
+
+\item{return}{if extendTaxonColorMap is true, the taxon color map is returned}
 }
 \description{
-Plot taxa in a bar plot sorted by summed abundance across samples
+Sort taxa by summed abundance across samples and plot sorted taxon composition with a bar per sample
 }
 \examples{
 data(ibd_taxa)

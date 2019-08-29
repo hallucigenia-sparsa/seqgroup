@@ -1,5 +1,5 @@
 #' @title Bar plot of taxon composition with group support
-#' @description Plot taxa in a bar plot sorted by summed abundance across samples
+#' @description Sort taxa by summed abundance across samples and plot sorted taxon composition with a bar per sample
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param groups group membership vector with as many entries as samples
 #' @param taxon.color.map map of taxon-specific colors, should match row names; taxa not present in the color map will be colored in summedTaxonColor
@@ -10,8 +10,9 @@
 #' @param summedTaxonColor the color of the summed taxa, by default gray
 #' @param extendTaxonColorMap if true, taxa not in the taxon color map are added there and the extended color map is returned
 #' @param legend add a legend with the color code
-#' @param legend.shift decrease this parameter to shift the legend further to the right
+#' @param legend.shift increase/decrease this parameter to shift the color legend further to the right/left
 #' @param \\dots Additional arguments passed to plot()
+#' @param return if extendTaxonColorMap is true, the taxon color map is returned
 #' @examples
 #' data(ibd_taxa)
 #' data(ibd_metadata)
@@ -21,7 +22,7 @@
 #' ibd_genera=aggregateTaxa(ibd_taxa,ibd_lineages,taxon.level = "genus")
 #' groupBarplot(ibd_genera,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
 #' @export
-groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=0.25, ...){
+groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, ...){
 
   if(length(groups)>0){
     if(length(groups)!=ncol(abundances)){
@@ -52,7 +53,6 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
 
   groupNum=length(unique(groups))
   prev.mar=par()$mar
-  text.offset=2.5
   mar.scale=0.5 # maximal number of characters is scaled by this number to compute mar on the right side
 
   sorted=NULL
@@ -60,6 +60,7 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   group.colors=c()
 
   # sort samples according to group membership
+  # TODO: only collecting indices is sufficient, no need to use cbind
   if(sortGroupwise && (groupNum>1 || randSampleNum>0)){
     counter=1
     abundancesSorted=NULL
@@ -108,7 +109,8 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   updated.mar=prev.mar
   #print(paste("Maximal character number",maxchars))
   updated.mar[4]=maxchars*mar.scale
-  par(mar=updated.mar)
+  par(mar=updated.mar,srt=90, las=2)
+  # par(las=2, srt=90, mar = c(5, 5, 4, 4))
 
   if(groupNum>1){
     group.colors=assignColorsToGroups(groups,myColors = group.color.map)
@@ -118,16 +120,22 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   }
 
   # do the bar plot
-  # note that ylim removes the margin for the main, so is omitted
-  midpoints=barplot(sorted,col=taxon.colors, ylab="Abundance",xaxt='n',cex.names=0.8, ...)
+  # note that ylim removes the margin definition, so is omitted
+  # check presence of ylab and add a default if absent
+  if(!("ylab" %in% names(match.call(expand.dots=TRUE)))){
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',ylab="Abundance",cex.names=0.8, ...)
+  }else{
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',cex.names=0.8, ...)
+  }
   #print(colnames(sorted))
-  text(labels=colnames(sorted),col=group.colors,x=midpoints,y=rep(0,ncol(sorted)),offset=text.offset, srt=90, pos=1, xpd=TRUE, cex=0.8)
+  mtext(colnames(sorted),col=group.colors,side=1, cex=0.8, line=0.5, at=midpoints)
+  par(las=1,srt=0)
 
   # add the legend
   if(legend==TRUE){
-    legend(updated.mar[4]*(1/legend.shift*mar.scale),1,legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors,xpd=TRUE)
+    legend(updated.mar[4]*(legend.shift/mar.scale),1,legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors,xpd=TRUE)
     if(groupNum>1){
-      legend(updated.mar[4]*(1/legend.shift*mar.scale),0,legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors),xpd=TRUE)
+      legend(updated.mar[4]*(legend.shift/mar.scale),0,legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors),xpd=TRUE)
     }
   }
   par(mar=prev.mar)

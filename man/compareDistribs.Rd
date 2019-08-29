@@ -5,7 +5,7 @@
 \title{Compare the distribution of a taxon across two groups}
 \usage{
 compareDistribs(x, taxon, groups = c(), group1 = 1, group2 = 2,
-  name1 = "group1", name2 = "group2")
+  name1 = as.character(group1), name2 = as.character(group2))
 }
 \arguments{
 \item{x}{a matrix with taxa as rows and samples as columns}
@@ -25,4 +25,14 @@ compareDistribs(x, taxon, groups = c(), group1 = 1, group2 = 2,
 \description{
 Plot taxon abundances as histograms and calculate the
 unpaired two-sided Wilcoxon p-value.
+}
+\examples{
+data("ibd_taxa")
+data("ibd_metadata")
+groups=as.vector(ibd_metadata$Diagnosis)
+compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="UC",group2="Control")
+groups[groups=="UC"]="IBD"
+groups[groups=="CD"]="IBD"
+# Faecalibacterium is significantly more abundant in the control group
+compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="IBD",group2="Control")
 }

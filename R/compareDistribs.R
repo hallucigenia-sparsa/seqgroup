@@ -10,8 +10,16 @@
 #' @param group2 the identifier of the second group (numeric or character)
 #' @param name1 the name to be displayed for the first group
 #' @param name2 the name to be displayed for the second group
-#'
-compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1="group1", name2="group2"){
+#' @examples
+#' data("ibd_taxa")
+#' data("ibd_metadata")
+#' groups=as.vector(ibd_metadata$Diagnosis)
+#' compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="UC",group2="Control")
+#' groups[groups=="UC"]="IBD"
+#' groups[groups=="CD"]="IBD"
+#' # Faecalibacterium is significantly more abundant in the control group
+#' compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="IBD",group2="Control")
+compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1=as.character(group1), name2=as.character(group2)){
   indices.group1=which(groups==group1)
   indices.group2=which(groups==group2)
   index=NA
