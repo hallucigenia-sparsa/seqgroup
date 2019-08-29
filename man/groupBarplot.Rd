@@ -33,8 +33,9 @@ groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
 \item{legend.shift}{increase/decrease this parameter to shift the color legend further to the right/left}
 
 \item{\\dots}{Additional arguments passed to plot()}
-
-\item{return}{if extendTaxonColorMap is true, the taxon color map is returned}
+}
+\value{
+if extendTaxonColorMap is true, the taxon color map is returned
 }
 \description{
 Sort taxa by summed abundance across samples and plot sorted taxon composition with a bar per sample

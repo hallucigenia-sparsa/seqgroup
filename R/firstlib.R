@@ -72,6 +72,7 @@
 #' @importFrom graphics boxplot
 #' @importFrom graphics points
 #' @importFrom graphics hist
+#' @importFrom graphics mtext
 #' @importFrom graphics abline
 #' @importFrom grDevices rgb
 #' @importFrom grDevices hsv

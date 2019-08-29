@@ -14,11 +14,13 @@
 #' data("ibd_taxa")
 #' data("ibd_metadata")
 #' groups=as.vector(ibd_metadata$Diagnosis)
-#' compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="UC",group2="Control")
+#' taxon="Faecalibacterium_prausnitzii"
+#' compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="UC",group2="Control")
 #' groups[groups=="UC"]="IBD"
 #' groups[groups=="CD"]="IBD"
 #' # Faecalibacterium is significantly more abundant in the control group
-#' compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="IBD",group2="Control")
+#' compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="IBD",group2="Control")
+#' @export
 compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1=as.character(group1), name2=as.character(group2)){
   indices.group1=which(groups==group1)
   indices.group2=which(groups==group2)

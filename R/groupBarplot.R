@@ -12,7 +12,7 @@
 #' @param legend add a legend with the color code
 #' @param legend.shift increase/decrease this parameter to shift the color legend further to the right/left
 #' @param \\dots Additional arguments passed to plot()
-#' @param return if extendTaxonColorMap is true, the taxon color map is returned
+#' @return if extendTaxonColorMap is true, the taxon color map is returned
 #' @examples
 #' data(ibd_taxa)
 #' data(ibd_metadata)

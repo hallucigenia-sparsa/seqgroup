@@ -30,9 +30,10 @@ unpaired two-sided Wilcoxon p-value.
 data("ibd_taxa")
 data("ibd_metadata")
 groups=as.vector(ibd_metadata$Diagnosis)
-compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="UC",group2="Control")
+taxon="Faecalibacterium_prausnitzii"
+compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="UC",group2="Control")
 groups[groups=="UC"]="IBD"
 groups[groups=="CD"]="IBD"
 # Faecalibacterium is significantly more abundant in the control group
-compareDistribs(ibd_taxa,taxon="Faecalibacterium_prausnitzii",groups=groups,group1="IBD",group2="Control")
+compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="IBD",group2="Control")
 }
