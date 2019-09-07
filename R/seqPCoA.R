@@ -68,6 +68,10 @@
 
 seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
 
+  if(length(clusters)>0){
+    clusters=as.character(clusters)
+  }
+
   metadata.to.plot=c()
   #metadata.to.plot=c("IS_TOTAL","PCSG")
 

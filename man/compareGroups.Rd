@@ -6,15 +6,15 @@
 \usage{
 compareGroups(abundances, property = "beta", method = "dissim",
   groups = c(), plot.type = "pergroup", avg = "none", all = FALSE,
-  noSameGroup = TRUE, rowNorm = FALSE, subsample = TRUE,
-  xlab = "Groups", pvalViz = FALSE)
+  noSameGroup = TRUE, rowNorm = FALSE, subsample = TRUE, xlab = "",
+  pvalViz = FALSE)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
 \item{property}{richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)}
 
-\item{method}{for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with the Dirichlet-Multnomial) are supported}
+\item{method}{for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported}
 
 \item{groups}{group membership vector with as many entries as samples in abundances}
 
@@ -28,14 +28,17 @@ compareGroups(abundances, property = "beta", method = "dissim",
 
 \item{rowNorm}{for beta diversity with method dissim: normalize the abundances row-wise}
 
-\item{subsample}{for intravsinter plot type: subsample to have as many intra-group as inter-group pairs prior to performing a Wilcoxon test}
+\item{subsample}{subsample groups randomly to have the same sample number in each group; for plot type intravsinter, it equalises in additon the number of pairs within and between groups}
 
 \item{xlab}{the x axis label}
 
 \item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr}
 }
 \description{
-Compare diversity-related properties across groups
+The function allows to compare richness, evenness, alpha diversity and beta diversity across groups, where
+beta diversity can be assessed with both a Bray Curtis distribution or overdispersion from a Dirichlet-Multinomial distribution fit.
+By default, groups are subsampled to the same sample number, for this reason the output of the same run can differ. To switch off this
+behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan.
 }
 \examples{
 data("ibd_taxa")

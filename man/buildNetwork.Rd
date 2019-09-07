@@ -5,7 +5,8 @@
 \title{Build a microbial network}
 \usage{
 buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
-  minStrength = 0.5, alpha = 0.05, directed = FALSE,
+  minStrength = 0.5, alpha = 0.05, renorm = FALSE,
+  initEdgeNum = 100, methodNum = 2, directed = FALSE,
   nameLevel = "Genus", colorLevel = "Class", widthFactor = 10)
 }
 \arguments{
@@ -13,13 +14,19 @@ buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
 
 \item{lineages}{a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)}
 
-\item{method}{mb and glasso (SPIEC-EASI), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc and si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
+\item{method}{mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
 
-\item{repNum}{the number of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods}
+\item{repNum}{the number of iterations for CoNet and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values}
 
 \item{minStrength}{bnlearn only: the minimum probability for an arc to appear across bootstraps (only applicable if repNum is set larger 1)}
 
-\item{alpha}{p-value threshold for bnlearn (ignored in methods aracne, hc, tabu, rsmax2, mmhc and h2pc)}
+\item{alpha}{p-value threshold for bnlearn and CoNet (ignored in methods aracne, hc, tabu, rsmax2, mmhc and h2pc)}
+
+\item{renorm}{compute correlation p-values in CoNet with renorm enabled (slow)}
+
+\item{initEdgeNum}{CoNet parameter for the number of initial top and bottom edges}
+
+\item{methodNum}{CoNet threshold on the minimum method number needed to keep an edge (only used when more than one method is provided)}
 
 \item{directed}{bnlearn only: infer a directed network (hc, tabu, rsmax2, mmhc and h2pc only infer directed networks, aracne only undirected networks)}
 
@@ -34,16 +41,24 @@ igraph object
 }
 \description{
 Wrapper for microbial network inference methods.
-SPIEC-EASI and bnlearn are supported.
+SPIEC-EASI, CoNet (see function \code{\link{barebonesCoNet}}) and bnlearn are supported.
 Abundances are assumed to have been already filtered and transformed.
 The function returns the network as an igraph object,
 with nodes labeled and colored at the selected taxonomic levels
-and, for SPIEC-EASI, edges in red or green, depending on whether they
+and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 represent negative or positive associations. For SPIEC-EASI, edge width
 represents the abolute of the regression coefficients, whereas for bnlearn, it represents
-the probability of an arc to re-appear across bootstrap iterations.
+the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
+represents absolute association strength, method number supporting an edge or significance,
+depending on whether more than one method was used to compute the network and whether or not
+p-values were computed (significance is defined as -log10(pval)). For single dissimilarities in CoNet, edge weight
+is scaled (see \code{\link{barebonesCoNet}} for details) such that for all network construction methods,
+a thicker edge means a stronger/more stable/more significant association.
+For CoNet, p-values are computed by default with cor.test for correlations and permutations and bootstraps
+for dissimilarities and are multiple-testing corrected with Benjamini-Hochberg.
+P-value computation in CoNet can be disabled by setting repNum to 0.
 If applicable, the color code for the node colors is plotted in a separate bar plot.
-SPIEC-EASI returns undirected graphs, whereas bnlearn methods support the inference
+SPIEC-EASI and CoNet return undirected graphs, whereas bnlearn methods support the inference
 of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 The returned network can be visualized with igraph's interactive network visualisation
 function tkplot or simply with igraph's plot function. When RCy3 is installed and Cytoscape is open,

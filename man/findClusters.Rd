@@ -4,14 +4,21 @@
 \alias{findClusters}
 \title{Cluster taxon- or sample-wise}
 \usage{
-findClusters(abundances, method = "dmm", k = 5)
+findClusters(abundances, method = "dmm", k = 3, minK = 2,
+  maxK = 10, qualityIndex = "CH")
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
 \item{method}{clustering method, supported are dmm and pam}
 
-\item{k}{cluster number}
+\item{k}{cluster number, can be set to NA if cluster number is to be determined with a quality index}
+
+\item{minK}{the minimum cluster number to test}
+
+\item{maxK}{the maximum cluster number to test}
+
+\item{qualityIndex}{CH (Calinski_Harabasz), Dunn, Silhouette and other quality indices supported by clusterCrit's intCriteria function}
 }
 \value{
 a cluster membership vector
@@ -21,8 +28,17 @@ Cluster sequencing data taxon- or sample-wise.
 By default, data are clustered sample-wise. The default method is
 Dirichlet-Multinomial mixtures (DMM) using the DirichletMultinomial package.
 Note that DMM expects counts and fails if there are taxa that are absent across all samples.
+Consequently, abundances are scaled to counts and taxa absent across all samples are removed.
 Also note that counts should not be too large for DMM (not above 10000). If this is the case,
 they will be scaled (divided by a constant and rounded). In addition, for DMM, the total number
 of counts should be the same across samples.
 Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
+The cluster number can be omitted, in which case the best cluster number is determined in the range
+provided using a cluster quality index implemented in clusterCrit's function intCriteria.
+}
+\examples{
+data("ibd_taxa")
+# unequal sample sums in the example data set are due to the removal of low-prevalence taxa
+clusters=findClusters(ibd_taxa,k=NA,maxK=6)
+table(clusters)
 }

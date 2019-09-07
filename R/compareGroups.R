@@ -1,15 +1,18 @@
 #' @title Compare diversity-related properties across groups
-#'
+#' @description The function allows to compare richness, evenness, alpha diversity and beta diversity across groups, where
+#' beta diversity can be assessed with both a Bray Curtis distribution or overdispersion from a Dirichlet-Multinomial distribution fit.
+#' By default, groups are subsampled to the same sample number, for this reason the output of the same run can differ. To switch off this
+#' behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan.
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param property richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)
-#' @param method for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with the Dirichlet-Multnomial) are supported
+#' @param method for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported
 #' @param groups group membership vector with as many entries as samples in abundances
 #' @param plot.type pergroup (plot property per group; this is the only plot type available for richness, evenness, alpha and beta with DM) and intravsinter (plot property for all within-group samples versus all samples)
 #' @param avg none, mean or median (average group property with the selected averaging method, does not work for method DM)
 #' @param all include the beta diversity for all samples
 #' @param noSameGroup for beta diversity with method dissim: only between-group pairs are used to calculate the beta diversity for all samples
 #' @param rowNorm for beta diversity with method dissim: normalize the abundances row-wise
-#' @param subsample for intravsinter plot type: subsample to have as many intra-group as inter-group pairs prior to performing a Wilcoxon test
+#' @param subsample subsample groups randomly to have the same sample number in each group; for plot type intravsinter, it equalises in additon the number of pairs within and between groups
 #' @param xlab the x axis label
 #' @param pvalViz if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr
 #' @examples
@@ -18,7 +21,7 @@
 #' groups=as.vector(ibd_metadata$Diagnosis)
 #' compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
 #' @export
-compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="Groups", pvalViz=FALSE){
+compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE){
   supported.properties=c("richness","evenness","alpha","beta")
   if(plot.type=="intravsinter" && property!="beta"){
     stop("The intravsinter plot type is only supported for beta diversity!")
@@ -27,19 +30,41 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
     stop("The intravsinter plot type is not supported for method DM.")
   }
   if(length(groups)==0){
-    warning("Empty group vector provided. All samples are assigned to the same group.")
-    groups=rep("all",ncol(abundances))
+    if(plot.type=="intravsinter"){
+      stop("For plot type intravsinter, a vector of group memberships is required.")
+    }else{
+      warning("Empty group vector provided. All samples are assigned to the same group.")
+      groups=rep("all",ncol(abundances))
+    }
+  }
+  if(plot.type=="intravsinter"){
+      all=TRUE
+      property="beta"
   }
   if(method %in% supported.properties){
     stop(paste("The method parameter specifies the way in which beta diversity is computed. Please use the property parameter."))
   }
+  scaleMatrix=FALSE
   if(property=="richness"){
-    if(!is.whole.matrix(abundances)){
-      vec=as.vector(abundances)
-      scaling.factor=1/min(vec[vec!=0])
-      warning(paste("Richness estimation requires counts; matrix is scaled to integers using factor:",scaling.factor))
-      abundances=round(abundances*scaling.factor)
+    if(!is.Count.Matrix(abundances)){
+      warning("Richness estimation requires counts. Data were scaled to counts.")
+      scaleMatrix=TRUE
     }
+  }
+  if(property=="beta" && method=="DM"){
+    if(!is.Count.Matrix(abundances)){
+      warning("The Dirichlet-Multinomial distribution can only be estimated from count data. Data were scaled to counts.")
+      scaleMatrix=TRUE
+    }
+  }
+  if(scaleMatrix){
+    vec=as.vector(abundances)
+    scaling.factor=1/min(vec[vec!=0])
+    if(scaling.factor>10000){
+      scaling.factor=10000
+    }
+    print(paste("Abundances have been scaled with factor:",scaling.factor))
+    abundances=round(abundances*scaling.factor)
   }
   if(property!="beta"){
     method=""
@@ -58,9 +83,26 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   main=""
   ylab=""
 
+  if(xlab==""){
+    if(plot.type=="intravsinter"){
+      xlab="Bray-Curtis dissimilarity"
+    }else{
+      xlab="Groups"
+    }
+  }
+
   if(rowNorm == TRUE){
     # normalize row-wise
     abundances=abundances/rowSums(abundances)
+  }
+
+  constrainSampleNum=FALSE
+  sampleNum=NA
+
+  if(subsample==TRUE){
+    constrainSampleNum=TRUE
+    sampleNum=min(table(groups))
+    print(paste("Constraining sample number randomly to the same minimal group sample number of",sampleNum))
   }
 
   # loop groups
@@ -68,6 +110,9 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
     groupspecdissim=c()
     print(paste("Processing group",group))
     group.indices=which(groups==group)
+    if(constrainSampleNum){
+      group.indices=sample(group.indices)[1:sampleNum]
+    }
     group.data=abundances[,group.indices]
     if(property=="beta"){
       if(is.null(group.data)==FALSE && ncol(group.data) > 1){
@@ -77,7 +122,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
           ylab="Bray Curtis dissimilarity"
           dissimMat=as.matrix(vegdist(t(group.data),method="bray"))
           dist=as.matrix(vegdist(t(group.data),method="bray"))
-          pergroupdissim[[as.character(group)]]=dist[lower.tri(dist)] # paste("group",group,sep="")
+          pergroupdissim[[as.character(group)]]=dist[lower.tri(dist)]
           # average beta diversity
           if(avg!="none"){
             if(avg=="median"){
@@ -103,7 +148,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
           main="Alpha diversity (Shannon index)"
           ylab="Shannon"
           # Shannon
-          value=diversity(group.data[,sample.index])
+          value=vegan::diversity(group.data[,sample.index])
         }else if(property=="richness"){
           main="Richness (Chao1 index)"
           ylab="Chao1"
@@ -157,10 +202,15 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   # plot
   if(plot.type=="pergroup"){
     if(method=="DM"){
-      ntheta=length(intradissim)
-      thetas=c(intradissim,interdissim)
+      thetas=intradissim
+      print(interdissim)
+      names.arg=groups.with.theta
+      if(all==TRUE){
+        names.arg=c(groups.with.theta,"all")
+        thetas=c(intradissim,interdissim)
+      }
       range=c(0,max(thetas))
-      barplot(thetas,col=c(rep("green",ntheta),"red"),names.arg=c(groups.with.theta,"all"),xlab="Group",ylab="Theta",main="Estimated overdispersion",ylim=range)
+      barplot(thetas,names.arg=names.arg,xlab=xlab,ylab="Theta",main="Estimated overdispersion",ylim=range)
     }else{
       if(avg!="none"){
         names(groupspecavgprops)=unique.groups
@@ -211,9 +261,9 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
           df_melt <- melt(df)
           if(length(combinations)>0){
             # cannot set ylim, else p-values are not plotted correctly
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2))
+            ggplot(df_melt, aes(variable,value))+geom_boxplot()+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2))
           }else{
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
+            ggplot(df_melt, aes(variable,value))+geom_boxplot()+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
           }
         }else{
           #print(dim(mat))
@@ -226,24 +276,34 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
       }
     }
   }else if(plot.type=="intravsinter"){
+    intradissim=as.vector(listToMat(pergroupdissim))
+    print(paste("Number of inter-group values:",length(interdissim)))
+    print(paste("Number of intra-group values:",length(intradissim)))
     if(subsample){
-      interdissimSub=interdissim[sample(1:length(intradissim))]
-      mat=cbind(intradissim,interdissimSub)
+      print("Number of inter and intra-group values is equalised.")
+      if(length(intradissim)<length(interdissim)){
+        mat=cbind(intradissim,interdissim[sample(1:length(intradissim))])
+      }else{
+        mat=cbind(intradissim[sample(1:length(interdissim))],interdissim)
+      }
     }else{
       dissimList=list(intradissim, interdissim)
-      names(dissimList)=c("intra","inter")
+      names(dissimList)=c("intra","inter") # names are required here
       mat=listToMat(dissimList)
     }
-    out=wilcox.test(mat[,1],mat[,2]) # unpaired, two-sided
+    colnames(mat)=c("intra","inter")
+    out=wilcox.test(mat[,1],mat[,2],na.rm=TRUE) # unpaired, two-sided
     pval=round(out$p.value,4)
-    colnames(mat)=c("intra-var","inter-var")
-    min=min(mat)
-    max=max(mat)
-    maxD=max(max(hist(intradissim,plot=F)$counts),max(hist(interdissimSub,plot=F)$counts))
+    min=min(mat,na.rm =TRUE)
+    max=max(mat,na.rm =TRUE)
+    maxD=max(max(hist(mat[,1],plot=F)$counts, na.rm=TRUE),max(hist(mat[,2],plot=F)$counts, na.rm=TRUE))
+    #print(min)
+    #print(max)
+    #print(maxD)
     cols=c(rgb(0,1,0,0.5),rgb(1,0,0,0.5))
-    hist(intradissim,xlim=c(min,max),ylim=c(0,maxD), main=paste("P-value Wilcoxon",pval,sep=": "), xlab="Bray-Curtis dissimilarity", col=cols[1], breaks="FD")
-    hist(interdissimSub,col=cols[2], breaks="FD", add=T)
-    legend("topright", c("intra-var","inter-var"), lty = rep(1,length(cols)), col = cols, merge = TRUE, bg = "white", text.col="black")
+    hist(mat[,1],xlim=c(min,max),ylim=c(0,maxD), main=paste("P-value Wilcoxon",pval,sep=": "), xlab=xlab, col=cols[1], breaks="FD")
+    hist(mat[,2],col=cols[2], breaks="FD", add=T)
+    legend("topleft", colnames(mat), lty = rep(1,length(cols)), col = cols, merge = TRUE, bg = "white", text.col="black")
   }else{
     stop(paste("Plot type",plot.type,"is not supported."))
   }
@@ -255,6 +315,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
 listToMat<-function(groupprops=list()){
   # get group with the largest number of entries
   maxnum=0
+  #print(names(groupprops))
   for(name in names(groupprops)){
     if(length(groupprops[[name]])>maxnum){
       maxnum=length(groupprops[[name]])
@@ -270,25 +331,6 @@ listToMat<-function(groupprops=list()){
     counter=counter+1
   }
   return(mat)
-}
-
-# test whether matrix only contains integers.
-is.whole.matrix<-function(x){
-  if(length(which(apply(x,2,is.whole)==FALSE))>0){
-    return(FALSE)
-  }else{
-    return(TRUE)
-  }
-}
-
-# taken from: https://stat.ethz.ch/pipermail/r-help/2003-April/032471.html
-is.whole <- function(a, tol = 1e-7) {
-  is.eq <- function(x,y) {
-    r <- all.equal(x,y, tol=tol)
-    is.logical(r) && r
-  }
-  (is.numeric(a) && is.eq(a, floor(a))) ||
-    (is.complex(a) && {ri <- c(Re(a),Im(a)); is.eq(ri, floor(ri))})
 }
 
 #' @title Compute evenness using Sheldon's index

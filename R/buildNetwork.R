@@ -1,16 +1,24 @@
 #' @title Build a microbial network
 #'
 #' @description Wrapper for microbial network inference methods.
-#' SPIEC-EASI and bnlearn are supported.
+#' SPIEC-EASI, CoNet (see function \code{\link{barebonesCoNet}}) and bnlearn are supported.
 #' Abundances are assumed to have been already filtered and transformed.
 #' The function returns the network as an igraph object,
 #' with nodes labeled and colored at the selected taxonomic levels
-#' and, for SPIEC-EASI, edges in red or green, depending on whether they
+#' and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 #' represent negative or positive associations. For SPIEC-EASI, edge width
 #' represents the abolute of the regression coefficients, whereas for bnlearn, it represents
-#' the probability of an arc to re-appear across bootstrap iterations.
+#' the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
+#' represents absolute association strength, method number supporting an edge or significance,
+#' depending on whether more than one method was used to compute the network and whether or not
+#' p-values were computed (significance is defined as -log10(pval)). For single dissimilarities in CoNet, edge weight
+#' is scaled (see \code{\link{barebonesCoNet}} for details) such that for all network construction methods,
+#' a thicker edge means a stronger/more stable/more significant association.
+#' For CoNet, p-values are computed by default with cor.test for correlations and permutations and bootstraps
+#' for dissimilarities and are multiple-testing corrected with Benjamini-Hochberg.
+#' P-value computation in CoNet can be disabled by setting repNum to 0.
 #' If applicable, the color code for the node colors is plotted in a separate bar plot.
-#' SPIEC-EASI returns undirected graphs, whereas bnlearn methods support the inference
+#' SPIEC-EASI and CoNet return undirected graphs, whereas bnlearn methods support the inference
 #' of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 #' The returned network can be visualized with igraph's interactive network visualisation
 #' function tkplot or simply with igraph's plot function. When RCy3 is installed and Cytoscape is open,
@@ -18,10 +26,13 @@
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param lineages a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)
-#' @param method mb and glasso (SPIEC-EASI), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc and si.hiton.pc (bnlearn, for aracne mi is set to mi-g)
-#' @param repNum the number of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods
+#' @param method mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)
+#' @param repNum the number of iterations for CoNet and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values
 #' @param minStrength bnlearn only: the minimum probability for an arc to appear across bootstraps (only applicable if repNum is set larger 1)
-#' @param alpha p-value threshold for bnlearn (ignored in methods aracne, hc, tabu, rsmax2, mmhc and h2pc)
+#' @param alpha p-value threshold for bnlearn and CoNet (ignored in methods aracne, hc, tabu, rsmax2, mmhc and h2pc)
+#' @param renorm compute correlation p-values in CoNet with renorm enabled (slow)
+#' @param initEdgeNum CoNet parameter for the number of initial top and bottom edges
+#' @param methodNum CoNet threshold on the minimum method number needed to keep an edge (only used when more than one method is provided)
 #' @param directed bnlearn only: infer a directed network (hc, tabu, rsmax2, mmhc and h2pc only infer directed networks, aracne only undirected networks)
 #' @param nameLevel the taxonomic level used for node names (only if lineages provided)
 #' @param colorLevel the taxonomic level used for node colors (only if lineages provided)
@@ -37,16 +48,21 @@
 #' plot(hc.out)
 #' @export
 
-buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStrength=0.5, alpha=0.05, directed=FALSE, nameLevel="Genus", colorLevel="Class", widthFactor=10){
+buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStrength=0.5, alpha=0.05, renorm=FALSE, initEdgeNum=100, methodNum=2, directed=FALSE, nameLevel="Genus", colorLevel="Class", widthFactor=10){
 
   supported.methods.bnlearn=c("hpc","si.hiton.pc","fast.iamb","gs","iamb.fdr","mmpc","pc.stable","hc","tabu","h2pc","mmhc","rsmax2","aracne")
   supported.methods.spiec=c("mb","glasso")
+  supported.methods.conet=c("pearson","spearman","kld","bray")
   result.graph=NULL
+
+  if(method %in% supported.methods.spiec && is.null(lineages)){
+    stop("For SPIEC-EASI, lineages are obligatory!")
+  }
 
   otu.ids=rownames(abundances)
 
   # spiec-easi methods
-  if(method %in% supported.methods.spiec){
+  if(length(method)==1 && method %in% supported.methods.spiec){
     #strains=otu_table(abundances,taxa_are_rows = TRUE)
     #taxa=tax_table(lineages)
     #phyloseqobj=phyloseq(strains, taxa)
@@ -83,6 +99,20 @@ buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStren
       # remove orphan nodes (not necessary for bnlearn)
       result.graph=delete.vertices(result.graph,degree(result.graph)==0)
     }
+  }else if(length(method)>1 || method %in% supported.methods.conet){
+      pval.cor=TRUE
+      permut=TRUE
+      permutandboot=TRUE
+      if(repNum==0 || is.na(repNum)){
+        permut=FALSE
+        pval.cor=FALSE
+        permutandboot=FALSE
+      }
+      result.graph=barebonesCoNet(abundances = abundances, methods = method, pval.T = alpha, bh=TRUE, init.edge.num = initEdgeNum, method.num.T = methodNum,iters = repNum, renorm=renorm, permut=permut,permutandboot = permutandboot, pval.cor = pval.cor)
+      #print("graph built")
+      result.graph=colorGraph(result.graph,otu.ids = c(),lineages = lineages,colorLevel = colorLevel,nameLevel = nameLevel)
+      E(result.graph)$width=E(result.graph)$weight*widthFactor
+      # removal of orphan nodes not necessary for CoNet
   }else{
     bnlearn.data=as.data.frame(t(abundances))
     # argument B not required in any of the methods listed here
@@ -158,9 +188,18 @@ buildNetwork<-function(abundances,lineages=NULL,method="mb", repNum=20, minStren
 colorGraph<-function(result.graph, otu.ids=c(),lineages=NULL,nameLevel="",colorLevel=""){
   # lineages provided
   if(!is.null(lineages)){
+    if(length(otu.ids)==0){
+      otu.ids=V(result.graph)$name
+      #print(otu.ids[1])
+      #print(otu.ids[1:10])
+    }
+    #print(nameLevel)
+    #print(colorLevel)
+    #print(lineages[1,])
     nodenames=getTaxonomy(otu.ids, lineages, useRownames=TRUE, level=nameLevel)
     # nodes belonging to the same taxonomic level receive the same node color
     colorgroups=getTaxonomy(otu.ids, lineages, useRownames=TRUE, level=colorLevel)
+    print(colorgroups)
     treated.colorgroups=c()
     # treat missing taxonomic assignments
     for(color.member in colorgroups){
@@ -170,12 +209,15 @@ colorGraph<-function(result.graph, otu.ids=c(),lineages=NULL,nameLevel="",colorL
       treated.colorgroups=c(treated.colorgroups,color.member)
     }
     colorgroups=treated.colorgroups
+    #print(length(colorgroups))
     assignedColors=assignColorsToGroups(colorgroups, returnMap=TRUE)
     nodecolors=assignedColors$colors
     #print(assignedColors$colorMap)
     #print(length(V(result.graph)))
     #print(length(nodenames))
     V(result.graph)$name=nodenames
+    #print(length(nodecolors))
+    #print(length(V(result.graph)))
     V(result.graph)$color=nodecolors
     unique.colors=c()
     unique.names=c()

@@ -4,39 +4,90 @@
 #' By default, data are clustered sample-wise. The default method is
 #' Dirichlet-Multinomial mixtures (DMM) using the DirichletMultinomial package.
 #' Note that DMM expects counts and fails if there are taxa that are absent across all samples.
+#' Consequently, abundances are scaled to counts and taxa absent across all samples are removed.
 #' Also note that counts should not be too large for DMM (not above 10000). If this is the case,
 #' they will be scaled (divided by a constant and rounded). In addition, for DMM, the total number
 #' of counts should be the same across samples.
 #' Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
+#' The cluster number can be omitted, in which case the best cluster number is determined in the range
+#' provided using a cluster quality index implemented in clusterCrit's function intCriteria.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param method clustering method, supported are dmm and pam
-#' @param k cluster number
+#' @param k cluster number, can be set to NA if cluster number is to be determined with a quality index
+#' @param minK the minimum cluster number to test
+#' @param maxK the maximum cluster number to test
+#' @param qualityIndex CH (Calinski_Harabasz), Dunn, Silhouette and other quality indices supported by clusterCrit's intCriteria function
 #' @return a cluster membership vector
+#' @examples
+#' data("ibd_taxa")
+#' # unequal sample sums in the example data set are due to the removal of low-prevalence taxa
+#' clusters=findClusters(ibd_taxa,k=NA,maxK=6)
+#' table(clusters)
 #' @export
 #'
 
-findClusters<-function(abundances, method="dmm", k=5){
+findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIndex="CH"){
   # DMM needs not too large counts and doesn't work when taxa are zero everywhere.
   if(method=="dmm"){
     taxonSums=rowSums(abundances)
     absent.taxa=which(taxonSums==0)
     colSums=colSums(abundances)
     if(length(unique(colSums))>1){
-      warning("The total counts across samples are not the same - DMM may be biased.")
+      warning("The total counts across samples are not the same. DMM may be biased.")
     }
     if(length(absent.taxa)>0){
-      stop("For DMM, please remove taxa with no occurrence across samples.")
+      warning("DMM does not accept taxa with no occurrence across samples. These have been removed.")
+      taxa.to.keep=setdiff(1:nrow(abundances),absent.taxa)
+      abundances=abundances[taxa.to.keep,]
     }
     if(!is.Count.Matrix(abundances)){
-      stop("Abundances are not counts. For DMM, please make sure to provide a count matrix.")
-    }
-    if(max(abundances)>10000){
-      scaling.factor=max(abundances)/10000
-      warning(paste("Counts are too large for DMM and are scaled by ",scaling.factor,", followed by rounding.",sep=""))
-      abundances=round(abundances/scaling.factor)
+      warning("DMM only accepts counts, thus abundances have been scaled to counts.")
+      vec=as.vector(abundances)
+      scaling.factor=1/min(vec[vec!=0])
+      if(scaling.factor>10000){
+        scaling.factor=10000
+      }
+      print(paste("Abundances have been scaled with factor:",scaling.factor))
+      abundances=round(abundances*scaling.factor)
+    }else{
+      if(max(abundances)>10000){
+        scaling.factor=max(abundances)/10000
+        warning(paste("Counts are too large for DMM and are scaled by ",scaling.factor,", followed by rounding.",sep=""))
+        abundances=round(abundances/scaling.factor)
+      }
     }
   }
+
+  if(qualityIndex=="CH"){
+    qualityIndex="Calinski_Harabasz"
+  }
+
+  # k provided
+  if(!is.na(k) && !is.null(k)){
+    groups=findClustersGivenK(abundances, method=method,k=k)
+    print(paste("Cluster quality according to",qualityIndex,":",intCriteria(t(abundances),groups,c(qualityIndex))))
+    return(groups)
+  }else{
+    # store group memberships
+    kToTest=c(minK : maxK)
+    groupMatrix=matrix(nrow=length(kToTest),ncol=ncol(abundances))
+    qualityValues=c()
+    rowCounter=1
+    for(k in kToTest){
+      groupMatrix[rowCounter,]=findClustersGivenK(abundances, method=method,k=k)
+      qualityValues=c(qualityValues,intCriteria(t(abundances),groupMatrix[rowCounter,],c(qualityIndex)))
+      rowCounter=rowCounter+1
+    }
+    #print(qualityValues)
+    index.best=bestCriterion(unlist(qualityValues), crit=qualityIndex)
+    print(paste("The optimal cluster number according to",qualityIndex,"is",kToTest[index.best],"with value",qualityValues[index.best]))
+    return(as.vector(groupMatrix[index.best,]))
+  }
+}
+
+# find clusters given a particular value for k
+findClustersGivenK<-function(abundances, method="dmm", k=5){
   groups=c()
   if(method=="dmm"){
     dmn.out=dmn(t(abundances),k=k, verbose=TRUE)
@@ -57,6 +108,7 @@ findClusters<-function(abundances, method="dmm", k=5){
   }
   return(groups)
 }
+
 
 #' @title Compute transition probabilities between clusters
 #'

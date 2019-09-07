@@ -16,11 +16,16 @@ Depends:
     igraph
 Imports:
   cluster,
+  clusterCrit,
   DirichletMultinomial,
   phyloseq,
   ggpubr,
   dirmult,
   SpiecEasi,
   bnlearn
+Suggests:
+    knitr,
+    rmarkdown
 Remotes: zdk123/SpiecEasi, bioc::release/DirichletMultinomial, bioc::release/phyloseq
 RoxygenNote: 6.1.1
+VignetteBuilder: knitr
