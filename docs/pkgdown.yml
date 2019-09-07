@@ -1,0 +1,6 @@
+pandoc: 1.19.2.1
+pkgdown: 1.4.0
+pkgdown_sha: ~
+articles:
+  seqgroup_tour: seqgroup_tour.html
+
