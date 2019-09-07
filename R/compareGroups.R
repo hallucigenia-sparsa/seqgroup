@@ -336,7 +336,7 @@ listToMat<-function(groupprops=list()){
 # Compute evenness using Sheldon's index
 #
 # Sheldon's index is defined as \eqn{S=\frac{e^H}{N}}, where H is the Shannon diversity and N the species number.
-#' It ranges from 0 to 1, where 1 signifies a perfectly even abundance distribution.
+# It ranges from 0 to 1, where 1 signifies a perfectly even abundance distribution.
 #
 #  A.L. Sheldon 1969. Equitability indices: dependence on the species count. Ecology, 50, 466-467.
 # C Heip 1974. A new index measuring evenness. J. mar. biol. Ass. UK 54, 555-557.
