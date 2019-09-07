@@ -228,7 +228,7 @@ ibd_taxa.nafree=ibd_taxa[,indices.to.keep]
 ## [1] "immunosuppressant"
 ## [1] "steroids"</code></pre>
 <p><img src="figure_seqgroup_tour/unnamed-chunk-12-1.png" width="576" style="display: block; margin: auto;"></p>
-<pre><code>## [1] "Among the top 60 covarying taxa, 3 are significant."</code></pre>
+<pre><code>## [1] "Among the top 60 covarying taxa, 4 are significant."</code></pre>
 <p>Faecalibacterium prausnitzii was found to significantly covary with community composition in the reduced missing-value free data set. We can compare its distribution in IBD and control samples. In this case, there is indeed a significant difference: the abundance of F. prausnitzii is reduced in IBD samples (high density at low abundance). Here, only a single taxon is compared across two groups, but a systematic comparison of taxon abundances across groups would require a multiple testing correction. ALDEx2 <a href="https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html" class="uri">https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html</a> is a good tool for this task.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ibd.groups=groups[indices.to.keep]
 ibd.groups[ibd.groups<span class="op">==</span><span class="st">"UC"</span>]=<span class="st">"IBD"</span>
