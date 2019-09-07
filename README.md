@@ -23,6 +23,10 @@ Now, you can load the seqgroup R package:
 library(seqgroup)
 ```
 
+### Tutorial
+
+For a tour of seqtime, see the [overview vignette](https://hallucigenia-sparsa.github.io/seqgroup/articles/seqgroup_tour.html).
+
 ### Development status
 
 [![Travis-CI Build Status](https://travis-ci.org/hallucigenia-sparsa/seqgroup.svg?branch=master)](https://travis-ci.org/hallucigenia-sparsa/seqgroup)
