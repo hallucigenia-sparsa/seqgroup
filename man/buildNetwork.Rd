@@ -46,9 +46,11 @@ Abundances are assumed to have been already filtered and transformed.
 The function returns the network as an igraph object,
 with nodes labeled and colored at the selected taxonomic levels
 and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
-represent negative or positive associations. For SPIEC-EASI, edge width
-represents the abolute of the regression coefficients, whereas for bnlearn, it represents
-the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
+represent negative or positive associations.
+}
+\details{
+For SPIEC-EASI, edge width represents the abolute of the regression coefficients, whereas for bnlearn,
+it represents the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
 represents absolute association strength, method number supporting an edge or significance,
 depending on whether more than one method was used to compute the network and whether or not
 p-values were computed (significance is defined as -log10(pval)). For single dissimilarities in CoNet, edge weight

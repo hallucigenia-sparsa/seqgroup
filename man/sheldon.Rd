@@ -2,29 +2,10 @@
 % Please edit documentation in R/compareGroups.R
 \name{sheldon}
 \alias{sheldon}
-\title{Compute evenness using Sheldon's index}
+\title{It ranges from 0 to 1, where 1 signifies a perfectly even abundance distribution.}
 \usage{
 sheldon(x, correction = TRUE, N2N1 = FALSE)
 }
-\arguments{
-\item{x}{a vector of species abundances}
-
-\item{correction}{whether or not to apply the correction described in Alatalo, Oikos 37, 199-204, 1981}
-
-\item{N2N1}{whether to compute Sheldon's evenness as the ratio of e raised to the power of H (H = Shannon diversity) and Simpson's diversity}
-}
-\value{
-Sheldon's evenness
-}
 \description{
-Sheldon's index is defined as \eqn{S=\frac{e^H}{N}}, where H is the Shannon diversity and N the species number.
 It ranges from 0 to 1, where 1 signifies a perfectly even abundance distribution.
-}
-\details{
-Note that the N2N1 mode results in evenness smaller than 1 for equal taxon probabilities.
-}
-\references{
-A.L. Sheldon 1969. Equitability indices: dependence on the species count. Ecology, 50, 466-467.
-
-C Heip 1974. A new index measuring evenness. J. mar. biol. Ass. UK 54, 555-557.
 }

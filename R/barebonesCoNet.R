@@ -464,13 +464,13 @@ getScores<-function(mat, method="spearman", pseudocount=NA){
 }
 
 
-#' @title Filter taxa in an abundance matrix
-#' @description Discard taxa with less than the given minimum number of occurrences.
-#' @param x taxon abundance matrix, rows are taxa, columns are samples
-#' @param minocc minimum occurrence (minimum number of samples with non-zero taxon abundance)
-#' @param keepSum If keepSum is true, the discarded rows are summed and the sum is added as a row with name: summed-nonfeat-rows
-#' @param return.filtered.indices if true, return an object with the filtered abundance matrix in mat and the indices of removed taxa in the original matrix in filtered.indices
-#' @return filtered abundance matrix
+# Filter taxa in an abundance matrix
+# Discard taxa with less than the given minimum number of occurrences.
+# x taxon abundance matrix, rows are taxa, columns are samples
+# minocc minimum occurrence (minimum number of samples with non-zero taxon abundance)
+# keepSum If keepSum is true, the discarded rows are summed and the sum is added as a row with name: summed-nonfeat-rows
+# return.filtered.indices if true, return an object with the filtered abundance matrix in mat and the indices of removed taxa in the original matrix in filtered.indices
+# filtered abundance matrix
 filterTaxonMatrix<-function(x, minocc=0, keepSum=FALSE, return.filtered.indices=FALSE){
   if(minocc==0){
     return(x)
@@ -506,14 +506,14 @@ filterTaxonMatrix<-function(x, minocc=0, keepSum=FALSE, return.filtered.indices=
 }
 
 
-#' @title Normalize a matrix
-#'
-#' @description Normalize a matrix column-wise by dividing each entry by its corresponding column sum.
-#'
-#' @details Columns summing to zero are removed by default.
-#'
-#' @param x a matrix
-#' @return a normalized matrix
+# Normalize a matrix
+#
+# Normalize a matrix column-wise by dividing each entry by its corresponding column sum.
+#
+# Columns summing to zero are removed by default.
+#
+# a matrix
+# a normalized matrix
 normalize<-function(x){
   # remove columns with only zeros from matrix, to avoid dividing by a zero
   colsums = apply(x,2,sum)
@@ -524,27 +524,25 @@ normalize<-function(x){
 }
 
 
-#' @title Get p-value
-#' @description Get permuation-based p-value for association between two vectors.
-#'
-#' @details # Compute the association between two vectors using the given method and
-#' compute its p-value using a permutation test. This method was adapted from R code by Fah Sahtirapongsasuti.
-#' This method was adapted from CCREPE: http://huttenhower.sph.harvard.edu/ccrepe.
-#' Emma Schwager et al Detecting statistically significant associtations between sparse and high dimensional compositional data. (In progress).
-#'
-#' @param matrix input matrix
-#' @param x.index index of first vector in the input matrix
-#' @param y.index index of second vector in the input matrix
-#' @param N.rand number of iterations used for the permutation test
-#' @param method similarity measure (supported measures are: "pearson", "spearman", "bray" and "kld")
-#' @param renorm renormalize after permutation
-#' @param permutandboot compute a bootstrap distribution in addition to the permutation distribution and
+# Get p-value
+# Get permuation-based p-value for association between two vectors.
+#
+# Compute the association between two vectors using the given method and
+# compute its p-value using a permutation test. This method was adapted from R code by Fah Sahtirapongsasuti.
+
+# matrix input matrix
+# x.index index of first vector in the input matrix
+# y.index index of second vector in the input matrix
+# N.rand number of iterations used for the permutation test
+# method similarity measure (supported measures are: "pearson", "spearman", "bray" and "kld")
+# renorm renormalize after permutation
+# permutandboot compute a bootstrap distribution in addition to the permutation distribution and
 #                 return the p-value as the mean of the permutation distribution under the bootstrap distribution
-#' @param plot plot the histogram of the permutation and, if permutandboot is true, of the bootstrap distribution
-#' @param verbose print distribution properties and p-value
-#' @param pseudocount pseudocount used when computing KLD
-#'
-#' @return p-value of the association
+# plot plot the histogram of the permutation and, if permutandboot is true, of the bootstrap distribution
+# verbose print distribution properties and p-value
+# pseudocount pseudocount used when computing KLD
+#
+# p-value of the association
 getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, plot=F, verbose=F,  pseudocount=NA) {
   x = matrix[x.index,]
   y = matrix[y.index,]
@@ -655,18 +653,18 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
   pval
 }
 
-#' @title Compute KLD of a matrix row-wise
-#' @description Compute Kullback-Leibler dissimilarity
-#'
-#' @details Outputs a Kullback-Leibler dissimilarity (symmetrized divergence) matrix. Note:
+# Compute KLD of a matrix row-wise
+# Compute Kullback-Leibler dissimilarity
+#
+# Outputs a Kullback-Leibler dissimilarity (symmetrized divergence) matrix. Note:
 # Equation: D(x,y) = SUM(x_i*log(x_i/y_i) + y_i*log(y_i/x_i))
 # taken from "Caution! Compositions! Can constraints on omics data lead analyses astray?"
 # David Lovell et al., Report Number EP10994
-#'
-#' @param x matrix
-#' @param pseudocount pseudocount = this value is added to each zero
 #
-#' @return kullback-leibler dissimilarity matrix
+# x matrix
+# pseudocount pseudocount = this value is added to each zero
+#
+# kullback-leibler dissimilarity matrix
 computeKld=function(x, pseudocount=0.00000001){
   # diagonal is zero
   kld=matrix(data=0,nrow=nrow(x),ncol=nrow(x))
@@ -679,19 +677,19 @@ computeKld=function(x, pseudocount=0.00000001){
   kld
 }
 
-#' @title Compute KLD between two vectors
-#' @description Compute Kullback-Leibler dissimilarity
-#'
-#' @details Outputs a Kullback-Leibler dissimilarity (symmetrized divergence) matrix. Note:
+# Compute KLD between two vectors
+# Compute Kullback-Leibler dissimilarity
+#
+# Outputs a Kullback-Leibler dissimilarity (symmetrized divergence) matrix. Note:
 # Equation: D(x,y) = SUM(x_i*log(x_i/y_i) + y_i*log(y_i/x_i))
 # taken from "Caution! Compositions! Can constraints on omics data lead analyses astray?"
 # David Lovell et al., Report Number EP10994
-#'
-#' @param x vector with non-negative numbers
-#' @param y vector with non-negative numbers
-#' @param pseudocount pseudocount = this value is added to each zero
 #
-#' @return kullback-leibler dissimilarity value
+# x vector with non-negative numbers
+# y vector with non-negative numbers
+# pseudocount pseudocount = this value is added to each zero
+#
+# kullback-leibler dissimilarity value
 get.kld=function(x,y, pseudocount=0.00000001){
   if(length(x) != length(y)){
     stop("The two vectors should have the same length!")

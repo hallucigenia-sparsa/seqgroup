@@ -519,14 +519,14 @@ myNorm<-function(x){
   return(sqrt(sum(x^2)))
 }
 
-#' @title Rarefaction combined with sample filtering
-#'
-#' @description Rarefy a matrix to the given minimum count number column-wise
-#' using vegan's rrarefy function. If columns have less than the minimum count number,
-#' they are discarded. Rows that have a sum of zero after rarefaction are also discarded.
-#' @param x a matrix
-#' @param min minimum count to which x is to be rarefied (if equal to zero, the minimum column sum is taken as min)
-#' @return a list with the rarefied matrix (rar) and the indices of the columns that were kept (colindices)
+# Rarefaction combined with sample filtering
+#
+# Rarefy a matrix to the given minimum count number column-wise
+# using vegan's rrarefy function. If columns have less than the minimum count number,
+# they are discarded. Rows that have a sum of zero after rarefaction are also discarded.
+# x a matrix
+# min minimum count to which x is to be rarefied (if equal to zero, the minimum column sum is taken as min)
+# a list with the rarefied matrix (rar) and the indices of the columns that were kept (colindices)
 rarefyFilter<-function(x,min = 0){
   keep=c()
   if(min < 0){
