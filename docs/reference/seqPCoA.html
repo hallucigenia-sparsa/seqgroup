@@ -304,7 +304,9 @@ The number in the axis label brackets refers to the proportion of variance expla
 #&gt; [1] "Metadata antibiotic is binary"
 #&gt; [1] "Metadata immunosuppressant is binary"
 #&gt; [1] "Metadata mesalamine is binary"
-#&gt; [1] "Metadata steroids is binary"</div><div class='input'><span class='fu'>seqPCoA</span>(<span class='no'>ibd_taxa</span>,<span class='kw'>groups</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/vector.html'>as.vector</a></span>(<span class='no'>ibd_metadata</span>$<span class='no'>Diagnosis</span>),<span class='kw'>topTaxa</span><span class='kw'>=</span><span class='fl'>30</span>)</div><div class='img'><img src='seqPCoA-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Among the top 30 covarying taxa, 2 are significant."</div><div class='input'><span class='co'># remove 65 samples with missing calprotectin measurements or other missing values in the metadata</span>
+#&gt; [1] "Metadata steroids is binary"</div><div class='input'><span class='fu'>seqPCoA</span>(<span class='no'>ibd_taxa</span>,<span class='kw'>groups</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/vector.html'>as.vector</a></span>(<span class='no'>ibd_metadata</span>$<span class='no'>Diagnosis</span>),<span class='kw'>topTaxa</span><span class='kw'>=</span><span class='fl'>30</span>)</div><div class='img'><img src='seqPCoA-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Among the top 30 covarying taxa, 2 are significant."
+#&gt; [1] "Subdoligranulum_unclassified"
+#&gt; [1] "Escherichia_unclassified"</div><div class='input'><span class='co'># remove 65 samples with missing calprotectin measurements or other missing values in the metadata</span>
 <span class='no'>na.indices</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/unique.html'>unique</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/which.html'>which</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/NA.html'>is.na</a></span>(<span class='no'>ibd_metadata</span>),<span class='kw'>arr.ind</span><span class='kw'>=</span><span class='fl'>TRUE</span>)[,<span class='fl'>1</span>])
 <span class='no'>indices.to.keep</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/sets.html'>setdiff</a></span>(<span class='fl'>1</span>:<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>ibd_metadata</span>),<span class='no'>na.indices</span>)
 <span class='no'>ibd_metadata</span><span class='kw'>=</span><span class='no'>ibd_metadata</span>[<span class='no'>indices.to.keep</span>,]
@@ -315,7 +317,11 @@ The number in the axis label brackets refers to the proportion of variance expla
 #&gt; [1] "Diagnosis"
 #&gt; [1] "antibiotic"
 #&gt; [1] "immunosuppressant"
-#&gt; [1] "steroids"</div><div class='img'><img src='seqPCoA-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Among the top 30 covarying taxa, 4 are significant."</div></pre>
+#&gt; [1] "steroids"</div><div class='img'><img src='seqPCoA-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Among the top 30 covarying taxa, 4 are significant."
+#&gt; [1] "Faecalibacterium_prausnitzii"
+#&gt; [1] "Ruminococcus_bromii"
+#&gt; [1] "Streptococcus_thermophilus"
+#&gt; [1] "Bacteroides_uniformis"</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

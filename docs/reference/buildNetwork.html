@@ -136,7 +136,8 @@ represent negative or positive associations.</p>
     <pre class="usage"><span class='fu'>buildNetwork</span>(<span class='no'>abundances</span>, <span class='kw'>lineages</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"mb"</span>, <span class='kw'>repNum</span> <span class='kw'>=</span> <span class='fl'>20</span>,
   <span class='kw'>minStrength</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>renorm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>initEdgeNum</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>methodNum</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>directed</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>nameLevel</span> <span class='kw'>=</span> <span class='st'>"Genus"</span>, <span class='kw'>colorLevel</span> <span class='kw'>=</span> <span class='st'>"Class"</span>, <span class='kw'>widthFactor</span> <span class='kw'>=</span> <span class='fl'>10</span>)</pre>
+  <span class='kw'>nameLevel</span> <span class='kw'>=</span> <span class='st'>"Genus"</span>, <span class='kw'>colorLevel</span> <span class='kw'>=</span> <span class='st'>"Class"</span>, <span class='kw'>widthFactor</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>left.margin</span> <span class='kw'>=</span> <span class='fl'>10</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -155,7 +156,7 @@ represent negative or positive associations.</p>
     </tr>
     <tr>
       <th>repNum</th>
-      <td><p>the number of iterations for CoNet and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values</p></td>
+      <td><p>the number of permutation/bootstrap iterations for CoNet with dissimilarities and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values</p></td>
     </tr>
     <tr>
       <th>minStrength</th>
@@ -193,6 +194,14 @@ represent negative or positive associations.</p>
       <th>widthFactor</th>
       <td><p>edge width scaling factor</p></td>
     </tr>
+    <tr>
+      <th>legend</th>
+      <td><p>if lineages are provided: show node color code</p></td>
+    </tr>
+    <tr>
+      <th>left.margin</th>
+      <td><p>if lineages are provided and legend is true: set the left margin (the margin is restored to its previous value afterwards)</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -211,7 +220,7 @@ a thicker edge means a stronger/more stable/more significant association.
 For CoNet, p-values are computed by default with cor.test for correlations and permutations and bootstraps
 for dissimilarities and are multiple-testing corrected with Benjamini-Hochberg.
 P-value computation in CoNet can be disabled by setting repNum to 0.
-If applicable, the color code for the node colors is plotted in a separate bar plot.
+If lineages are provided and legend is true, the color code for the node colors is plotted in a separate bar plot.
 SPIEC-EASI and CoNet return undirected graphs, whereas bnlearn methods support the inference
 of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 The returned network can be visualized with igraph's interactive network visualisation
@@ -267,37 +276,7 @@ the graph can also be sent to Cytoscape directly with RCy3's function createNetw
 #&gt; [1] "Carrying out  20 bootstraps to assess edge strengths..."
 #&gt; [1] "logLik: 8099.57779267286"
 #&gt; [1] "AIC: 8017.57779267286"
-#&gt; [1] "BIC: 7892.79736287917"
-#&gt;          Eubacterium_rectale Faecalibacterium_prausnitzii 
-#&gt;                 "Clostridia"                 "Clostridia" 
-#&gt;          Ruminococcus_gnavus             Escherichia_coli 
-#&gt;                 "Clostridia"        "Gammaproteobacteria" 
-#&gt;   Ruminococcus_sp_5_1_39BFAA Subdoligranulum_unclassified 
-#&gt;                 "Clostridia"                 "Clostridia" 
-#&gt; Bifidobacterium_adolescentis       Bifidobacterium_longum 
-#&gt;             "Actinobacteria"             "Actinobacteria" 
-#&gt;      Akkermansia_muciniphila            Dialister_invisus 
-#&gt;           "Verrucomicrobiae"              "Negativicutes" 
-#&gt;        Bacteroides_uniformis         Ruminococcus_torques 
-#&gt;                "Bacteroidia"                 "Clostridia" 
-#&gt;         Bacteroides_vulgatus          Ruminococcus_bromii 
-#&gt;                "Bacteroidia"                 "Clostridia" 
-#&gt;             Prevotella_copri      Collinsella_aerofaciens 
-#&gt;                "Bacteroidia"             "Coriobacteriia" 
-#&gt;         Alistipes_putredinis            Dorea_longicatena 
-#&gt;                "Bacteroidia"                 "Clostridia" 
-#&gt;       Roseburia_intestinalis           Bacteroides_ovatus 
-#&gt;                 "Clostridia"                "Bacteroidia" 
-#&gt;   Streptococcus_thermophilus           Eubacterium_hallii 
-#&gt;                    "Bacilli"                 "Clostridia" 
-#&gt;        Bacteroides_stercoris       Parabacteroides_merdae 
-#&gt;                "Bacteroidia"                "Bacteroidia" 
-#&gt;        Alistipes_onderdonkii            Bacteroides_dorei 
-#&gt;                "Bacteroidia"                "Bacteroidia" 
-#&gt;         Enterococcus_faecium           Bacteroides_caccae 
-#&gt;                    "Bacilli"                "Bacteroidia" 
-#&gt; Parabacteroides_unclassified            Coprococcus_comes 
-#&gt;                "Bacteroidia"                 "Clostridia" </div><div class='output co'>#&gt; <span class='warning'>Warning: number of items to replace is not a multiple of replacement length</span></div><div class='output co'>#&gt; <span class='warning'>Warning: number of items to replace is not a multiple of replacement length</span></div><div class='img'><img src='buildNetwork-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>hc.out</span>)</div><div class='img'><img src='buildNetwork-2.png' alt='' width='700' height='433' /></div></pre>
+#&gt; [1] "BIC: 7892.79736287917"</div><div class='img'><img src='buildNetwork-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>hc.out</span>)</div><div class='img'><img src='buildNetwork-2.png' alt='' width='700' height='433' /></div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>IBD and control taxon abundances from the PRISM cohort — ibd_taxa • seqgroup</title>
+<title>Functions from the PRISM cohort — ibd_functions • seqgroup</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -32,9 +32,9 @@
 
 
 
-<meta property="og:title" content="IBD and control taxon abundances from the PRISM cohort — ibd_taxa" />
+<meta property="og:title" content="Functions from the PRISM cohort — ibd_functions" />
 
-<meta property="og:description" content="Species abundances extracted from whole-genome shotgun data of stool samples." />
+<meta property="og:description" content="Function (i.e. enzyme-coding gene) abundances extracted from whole-genome shotgun data of stool samples." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -110,31 +110,32 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>IBD and control taxon abundances from the PRISM cohort</h1>
+    <h1>Functions from the PRISM cohort</h1>
     
-    <div class="hidden name"><code>ibd_taxa.Rd</code></div>
+    <div class="hidden name"><code>ibd_functions.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Species abundances extracted from whole-genome shotgun data of stool samples.</p>
+    <p>Function (i.e. enzyme-coding gene) abundances extracted from whole-genome shotgun data of stool samples.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>ibd_taxa</span>)</pre>
+    <pre class="usage"><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>ibd_functions</span>)</pre>
         
     <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
 
-    <p>An object of class <code>matrix</code> with 201 rows and 155 columns.</p>
+    <p>An object of class <code>data.frame</code> with 2113 rows and 155 columns.</p>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Species x sample matrix of size 201 x 155</p>
+    <p>Function x sample matrix of size 2113 x 155</p>
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Samples include patients with Crohn's disease (CD, n=68) and ulcerative colitis (UC, n=53) as well as healthy controls (n=34).
-Species relative abundances were computed with MetaPhlAn2 and species below or equal to 0.1<!-- % abundance in at least five samples were excluded. --></p>
+    <p>Stool samples were taken from patients with Crohn's disease (CD, n=68) and ulcerative colitis (UC, n=53) as well as healthy controls (n=34).
+The order of samples matches those of ibd_taxa. Functional assignment was carried out with the HUMAnN2 pipeline. Enzyme names as well as EC
+numbers are given.</p>
     
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -143,7 +144,7 @@ Species relative abundances were computed with MetaPhlAn2 and species below or e
     
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>ibd_taxa</span>)</div></pre>
+    <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>ibd_functions</span>)</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>

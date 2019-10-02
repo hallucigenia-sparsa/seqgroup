@@ -362,6 +362,9 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     if(length(sig.pvalue.indices)>0 || !was.permuted){
       if(was.permuted){
         print(paste("Among the top ",topTaxa," covarying taxa, ",length(sig.pvalue.indices)," are significant.",sep=""))
+        for(sig.taxon.name in rownames(U.selected)){
+          print(sig.taxon.name)
+        }
       }
       arrows(0, 0, U.selected[, 1] * arrowFactor, U.selected[, 2] * arrowFactor, col = taxonColor,length = 0.1, lty=2)
 

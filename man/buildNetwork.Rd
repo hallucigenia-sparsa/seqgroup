@@ -7,7 +7,8 @@
 buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
   minStrength = 0.5, alpha = 0.05, renorm = FALSE,
   initEdgeNum = 100, methodNum = 2, directed = FALSE,
-  nameLevel = "Genus", colorLevel = "Class", widthFactor = 10)
+  nameLevel = "Genus", colorLevel = "Class", widthFactor = 10,
+  legend = TRUE, left.margin = 10)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -16,7 +17,7 @@ buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
 
 \item{method}{mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
 
-\item{repNum}{the number of iterations for CoNet and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values}
+\item{repNum}{the number of permutation/bootstrap iterations for CoNet with dissimilarities and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values}
 
 \item{minStrength}{bnlearn only: the minimum probability for an arc to appear across bootstraps (only applicable if repNum is set larger 1)}
 
@@ -35,6 +36,10 @@ buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
 \item{colorLevel}{the taxonomic level used for node colors (only if lineages provided)}
 
 \item{widthFactor}{edge width scaling factor}
+
+\item{legend}{if lineages are provided: show node color code}
+
+\item{left.margin}{if lineages are provided and legend is true: set the left margin (the margin is restored to its previous value afterwards)}
 }
 \value{
 igraph object
@@ -59,7 +64,7 @@ a thicker edge means a stronger/more stable/more significant association.
 For CoNet, p-values are computed by default with cor.test for correlations and permutations and bootstraps
 for dissimilarities and are multiple-testing corrected with Benjamini-Hochberg.
 P-value computation in CoNet can be disabled by setting repNum to 0.
-If applicable, the color code for the node colors is plotted in a separate bar plot.
+If lineages are provided and legend is true, the color code for the node colors is plotted in a separate bar plot.
 SPIEC-EASI and CoNet return undirected graphs, whereas bnlearn methods support the inference
 of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 The returned network can be visualized with igraph's interactive network visualisation

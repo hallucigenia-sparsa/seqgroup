@@ -21,8 +21,7 @@ opts_chunk$set(fig.path="figure_seqgroup_tour/")
 
 The example data in this tutorial are taken from an IBD study carried out by Franzosa et al. <https://www.nature.com/articles/s41564-018-0306-4>. In this study, faecal samples from the PRISM cohort were 
 sequenced and analysed. The PRISM cohort consists of 68 cases of Crohn's disease (CD), 53 cases of ulcerative colitis (UC)
-and 34 controls, thus totalling 155 samples. Metagenomic shotgun sequencing was carried out. Relative abundances of species were
-estimated with species-specific marker genes using MetaPhlan2. Species below or equal to 0.1% abundance in at least five samples were excluded. CD and UC together are also referred to as inflammatory bowel disease (IBD).
+and 34 controls, thus totalling 155 samples. Whole-genome shotgun sequencing was carried out. Relative abundances of species were estimated with species-specific marker genes using MetaPhlan2 and function abundances were computed with HUMAnN2. Species below or equal to 0.1% abundance in at least five samples were excluded. CD and UC together are also referred to as inflammatory bowel disease (IBD).
 
 ## Preparation of the analysis
 
@@ -32,21 +31,24 @@ We start by loading the seqgroup library.
 library(seqgroup)
 ```
 
-Next, we load the taxon abundances, taxon lineages, and sample metadata from the PRISM cohort. Taxon abundances and metadata have matching sample identifiers, thus the status of a sample can be looked up in the metadata table. We summarise the metadata using
-the summary command. This command also tells us that some metadata information are missing, for instance there are 62
+Next, we load the taxon abundances, taxon lineages, functions and sample metadata from the PRISM cohort. Taxon abundances and metadata have matching sample identifiers, thus the status of a sample can be looked up in the metadata table. We summarise the metadata using the summary command. This command also tells us that some metadata information are missing, for instance there are 62
 missing values (NA) for fecal calprotectin.
 
 ```{r, message=FALSE, warning=FALSE}
-data("ibd_taxa")
-data("ibd_lineages")
-data("ibd_metadata")
+data("ibd_taxa") # taxon x sample matrix
+data("ibd_lineages") # lineage x taxon matrix
+data("ibd_metadata") # metadata x sample data frame
+data("ibd_functions") # functions x sample matrix
 summary(ibd_metadata)
 ```
 
-In this data set, we have three groups of interest: CD, UC and control. For future analyses, it is handy to have a vector with the group memberships ready. We can extract this vector from the metadata table.
+In this data set, we have three groups of interest: CD, UC and control. For future analyses, it is handy to have a vector with the group memberships ready. We can extract this vector from the metadata table. The two disease groups (UCD and CD) can also be merged into a single group. This is done in the second group membership vector (ibd.groups).
 
 ```{r, message=FALSE, warning=FALSE}
 groups=as.vector(ibd_metadata$Diagnosis)
+ibd.groups=groups
+ibd.groups[ibd.groups=="UC"]="IBD"
+ibd.groups[ibd.groups=="CD"]="IBD"
 ```
 
 
@@ -86,7 +88,7 @@ groupBarplot(ibd_taxa,topTaxa = 15,groups=groups, randSampleNum = 10, legend.shi
 We can obtain a group-specific ranking and preserve the color code using extendTaxonColorMap. This illustrates that IBD samples have different top-abundant taxa than control samples do.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
-ibd.indices=c(which(groups=="UC"),which(groups=="CD"))
+ibd.indices=which(ibd.groups=="IBD")
 par(mfrow=c(2,1))
 taxon.color.map=groupBarplot(ibd_taxa[,control.indices],topTaxa = 7, randSampleNum = 20, extendTaxonColorMap = TRUE, main="Control")
 taxon.color.map=groupBarplot(ibd_taxa[,ibd.indices],topTaxa = 7, randSampleNum = 20, taxon.color.map = taxon.color.map, extendTaxonColorMap = TRUE, main="IBD")
@@ -104,10 +106,9 @@ p
 
 ## Ordination
 
-To check whether samples group by community composition, an ordination is frequently carried out. In seqgroup, vegan's ordination functions are used to do bi- and triplots.
+To check whether samples group by community composition, an ordination is frequently carried out. In seqgroup, vegan's ordination functions are used to do bi- and triplots. By default, Bray Curtis is used to assess sample dissimilarities.
 
-A biplot is a plot that shows both samples and taxa in the same ordination. The function seqPCoA displays significantly co-varying taxa among the selected number of taxa having the strongest covariance. The resulting plot shows that control samples are grouped separately from most IBD samples as seen in Figure 1c in Franzosa et al. <https://www.nature.com/articles/s41564-018-0306-4>. Bray-Curtis is robust to co-absences, which bias other measures of dissimilarity/distance. This can be tested by applying a prevalence filter and repeating the plot. The sample groups are preserved, however the strongly covarying taxa are altered,
-since the prevalence filter removes taxa.
+A biplot is a plot that shows both samples and taxa in the same ordination. The function seqPCoA identifies taxa that co-vary significantly with the principal components (that is the eigen vectors of the dissimilarity matrix), which represent the main axes of community variaton. Significance of covariation is assessed through a permutation test for the selected number of top covarying taxa. The resulting plot shows that control samples are grouped separately from most IBD samples as seen in Figure 1c in Franzosa et al. <https://www.nature.com/articles/s41564-018-0306-4> and that an unclassified Escherichia points in the direction of the IBD sample cluster. This means that Escherichia abundance is higher in samples further away from the center along the direction of its arrow. Bray-Curtis is robust to co-absences, which bias other measures of dissimilarity/distance. For instance, when applying a prevalence filter and repeating the plot, the sample groups are preserved.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
 seqPCoA(ibd_taxa,groups=groups, topTaxa=30)
@@ -120,8 +121,8 @@ indices.prev=which(rowSums>=prev)
 seqPCoA(ibd_taxa[indices.prev,], groups=groups, topTaxa=30)
 ```
 
-In a triplot, covarying metadata are plotted in addition. Seqgroup wraps vegan's envfit function to do so, which does not accept missing values. In addition, envfit needs to know whether to treat metadata as numeric or categoric. By default, they are all categoric, even age, which is better treated as numeric here. Thus, before carrying out a triplot with seqPCoA, we need to assign the correct data categories and remove metadata and/or samples with missing values. 
-The ordination then shows that calprotectin values covary strongly and significantly with the community composition of IBD samples.
+In a triplot, metadata covarying with the principal components are plotted in addition. Seqgroup wraps vegan's envfit function to do so, which does not accept missing values. In addition, envfit needs to know whether to treat metadata as numeric or categoric. By default, they are all categoric, even age, which is better treated as numeric here. Thus, before carrying out a triplot with seqPCoA, we need to assign the correct data categories and remove metadata and/or samples with missing values. 
+The ordination then shows that fecal calprotectin values covary strongly and significantly with the community composition of IBD samples, in agreement with the results of Franzosa and colleagues.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
 # assign numeric metadata types, metadata with only 2 values are treated automatically as categoric (binary).
@@ -134,7 +135,7 @@ ibd_taxa.nafree=ibd_taxa[,indices.to.keep]
 seqPCoA(ibd_taxa.nafree,metadata=ibd_metadata.nafree,groups=groups[indices.to.keep],topTaxa=60)
 ```
 
-The same result is also supported by the Gower distance.
+The main results (IBD and control samples cluster apart, calprotectin is increased in IBD samples) are robust to the dissimilarity/distance chosen to compute the ordination and are also found with the Gower distance.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
 seqPCoA(ibd_taxa.nafree,metadata=ibd_metadata.nafree,groups=groups[indices.to.keep],topTaxa=60, dis="gower",xlim=c(-0.3,0.3),main="Gower")
@@ -143,11 +144,9 @@ seqPCoA(ibd_taxa.nafree,metadata=ibd_metadata.nafree,groups=groups[indices.to.ke
 Faecalibacterium prausnitzii was found to significantly covary with community composition in the reduced missing-value free data set. We can compare its distribution in IBD and control samples. In this case, there is indeed a significant difference: the abundance of F. prausnitzii is reduced in IBD samples (high density at low abundance). Here, only a single taxon is compared across two groups, but a systematic comparison of taxon abundances across groups would require a multiple testing correction. ALDEx2 <https://www.bioconductor.org/packages/release/bioc/html/ALDEx2.html> is a good tool for this task.
 
 ```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
-ibd.groups=groups[indices.to.keep]
-ibd.groups[ibd.groups=="UC"]="IBD"
-ibd.groups[ibd.groups=="CD"]="IBD"
+ibd.groups.nafree=ibd.groups[indices.to.keep]
 taxon="Faecalibacterium_prausnitzii"
-compareDistribs(ibd_taxa.nafree,taxon=taxon,groups=ibd.groups,group1="IBD",group2="Control")
+compareDistribs(ibd_taxa.nafree,taxon=taxon,groups=ibd.groups.nafree,group1="IBD",group2="Control")
 ```
 
 ## Sample-wise clustering
@@ -162,7 +161,66 @@ seqPCoA(ibd_taxa,groups=groups,clusters=clusters, topTaxa=30)
 The significance of the agreement between clusters and groups can be assessed for instance with a Chi^2 test.
 
 ```{r, message=FALSE, warning=FALSE}
-clus.table = table(groups, clusters) 
+clus.table = table(ibd.groups, clusters) 
 chisq.test(clus.table) 
 ```
 
+## Network inference
+
+A network is a straightforward way to visualise associations between taxa. In a network, a node represents a taxon and an edge connecting two taxa represents a significant or robust positive or negative association between their two abundance profiles.
+
+For the purpose of network construction, seqgroup offers the buildNetwork function, which wraps several network inference algorithms, namely those offered in SpiecEasi <https://github.com/zdk123/SpiecEasi> and in  bnlearn <http://www.bnlearn.com/> as well as a barebones R implementation of CoNet <http://systemsbiology.vub.ac.be/conet>.
+
+CoNet allows combining several association measures. We will make use of this below, where we will construct networks without
+computing p-values (which takes too long for a tutorial), but keeping only the edges supported by both selected methods. Note that only those taxa with a prevalence equal to or above the prevalence threshold applied previously are considered.
+
+The resulting networks for IBD and control samples differ, as expected based on the differences in taxon composition. For instance, the IBD network has a larger proportion of nodes belonging to class Clostridia. The color code shows that there is some phylogenetic assortativity, that is taxa are often associated to other taxa of the same class. However, there is no striking difference in network properties.
+
+```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 10, fig.width = 10}
+def.par=par(no.readonly = TRUE) # save previous par settings
+layout(matrix(c(1,3,2,4),2,2,byrow = TRUE), c(2,3,2,3), TRUE) # define space for 4 figures
+ibd.network=buildNetwork(ibd_taxa[indices.prev,ibd.indices], lineages=ibd_lineages[indices.prev,], method=c("spearman","bray"), repNum=0, nameLevel="species") # run CoNet on IBD samples
+control.network=buildNetwork(ibd_taxa[indices.prev,control.indices], lineages=ibd_lineages[indices.prev,], method=c("spearman","bray"), repNum=0, nameLevel="species") # run CoNet on control samples
+plot(ibd.network,main="IBD network")
+plot(control.network, main="Control network")
+par(def.par)
+```
+
+In general, the results of network inference are strongly dependent on the choice of the inference algorithm. To demonstrate this, we now compute the control network with ARACNE <https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-7-S1-S7> as implemented in bnlearn. Very roughly, ARACNE computes all pair-wise mutual information edges and then removes edges with lower mutual information than neighboring edges in order to reduce the number of indirect edges. Here, we only retain edges that are stable across 100 bootstrap iterations, that is repetitions of ARACNE on sub-samples of the data. Since mutual information is a general measure of dependency, no negative or positive edge sign can be assigned. In this case, the number of inferred edges is so large that the result is a typical "hairball", which requires further analysis. Both igraph and Cytoscape <https://cytoscape.org/> offer a range of functions/plugins for network analysis. If Cytoscape is open and the RCy3 package <https://bioconductor.org/packages/release/bioc/html/RCy3.html> is installed, the network can be sent to Cytoscape directly using RCy3's function createNetworkFromIgraph(). 
+
+```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
+control.aracne=buildNetwork(ibd_taxa[indices.prev,control.indices],lineages=ibd_lineages[indices.prev,],method="aracne",repNum=100)
+plot(control.aracne, main="Control network inferred with ARACNE")
+# The node label is assigned on genus level here; unlabeled nodes do not have a genus assigned.
+```
+
+While the condition-specific microbial networks are not too informative, we can learn more from the global network computed on all samples, since in this case, we also capture species that increase or decrease in abundance across the two conditions (healthy vs IBD), thereby covarying or excluding each other. In order to know which taxa increase or decrease in IBD samples, we introduce a binary variable, named IBD status, that we derive from the group assignment vector and append to the abundance matrix. Note that the abundances with metadata appended should not be transformed, but since they already represent filtered relative abundances, no further transformation step is necessary. Please also note that we treat a binary as a numeric variable here, which means we interpret it as an "IBD status" quantity that takes two values, low and high. This approach is not permissible with the three original sample groups, since it imposes an order that is not naturally present in UC and CD samples (i.e. we cannot say that in UC samples, the "IBD status" is higher or lower than in CD samples). 
+Interestingly, we see several instances of mutual exclusion between species belonging to the same genus, which we did not find in the condition-specific networks. It is possible that different representatives of the same genus do better in the healthy and the IBD samples, respectively, an outcome that would not have been visible without species-level resolution. In addition, we find that several species are inversely correlated to IBD status, including Coprococcus catus, Gordonibacter pamelaeae, Alistipes shahii and Roseburia hominis. These would deserve further exploration.
+
+```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
+# we binarise the group assignment to append it to the abundances
+ibd.status=ibd.groups
+ibd.status[ibd.groups=="Control"]=0
+ibd.status[ibd.groups=="IBD"]=1
+ibd_taxa_extended=rbind(ibd_taxa[indices.prev,],as.numeric(ibd.status))
+rownames(ibd_taxa_extended)=c(rownames(ibd_taxa)[indices.prev],"ibd.status") # append row name for IBD status
+ibd_lineages_extended=rbind(ibd_lineages[indices.prev,],rep("IBD_status",7)) # entry in lineage matrix needed to label node
+rownames(ibd_lineages_extended)=c(rownames(ibd_lineages)[indices.prev],"ibd.status") # append row name for IBD status
+network=buildNetwork(ibd_taxa_extended, lineages=ibd_lineages_extended, method=c("spearman","bray"), repNum=0, nameLevel="species") # run CoNet on all samples
+plot(network,main="Global network")
+```
+
+Finally, we can look at the cross-correlation between species and function abundances using the barebones CoNet function directly. We take several shortcuts here to compute the cross-correlation network in a reasonable amount of time: first, we strongly filter the functions to keep only those that are present in most of the samples. Second, as above, we will not assess the significance of the correlations. The result is a bipartite network with two node sets, one for the species and one for the functions. 
+
+```{r, message=FALSE, warning=FALSE, fig.align = "center", fig.height = 10, fig.width = 10}
+prev=150 # minimum occurrence for functions
+ibd_functions_incidence=ibd_functions
+ibd_functions_incidence[ibd_functions_incidence>0]=1
+rowSums=rowSums(ibd_functions_incidence)
+indices.functions.prev=which(rowSums>=prev)
+# CoNet expects metadata to have samples as rows, therefore functions have to be transposed
+bip.network=barebonesCoNet(abundances=ibd_taxa[indices.prev,],metadata=t(ibd_functions[indices.functions.prev,]),methods="pearson",T.up=0.7,T.down=-0.7) 
+plot(bip.network,main="Global species-function network")
+```
+
+Although the network is crudely built, the results are interesting. For instance, Akkermansia, which is a known mucin degrader, is associated to beta-N-acetylhexosaminidase. N-acetyl-D-glucosamine is a component of mucin. For Eubacterium rectale, three of its associated functions (with EC numbers 2.7.1.156, 2.7.7.62 and 3.1.3.73) are involved in vitamin B12 biosynthesis. Finally, Faecalibacteriun prausnitzii, a known butyrate producer, is associated to hydroxyl-butyryl-CoA dehydrogenase, which is involved in butyrate synthesis. Note that the abundances of the functions have been extracted from metagenomic and not metatranscriptomic data, which means that it is not clear whether enzymes encoded by these functional genes are also  expressed. 

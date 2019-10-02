@@ -4,8 +4,8 @@
 \alias{barebonesCoNet}
 \title{Barebones R implementation of CoNet}
 \usage{
-barebonesCoNet(abundances, methods = c("spearman", "kld"), T.up = NA,
-  T.down = NA, method.num.T = 2, pval.T = 0.05,
+barebonesCoNet(abundances, metadata = NULL, methods = c("spearman",
+  "kld"), T.up = NA, T.down = NA, method.num.T = 2, pval.T = 0.05,
   init.edge.num = max(2, round(sqrt(nrow(abundances)))), min.occ = 0,
   keep.filtered = TRUE, norm = FALSE, stand.rows = FALSE,
   pval.cor = FALSE, permut = FALSE, renorm = FALSE,
@@ -14,6 +14,8 @@ barebonesCoNet(abundances, methods = c("spearman", "kld"), T.up = NA,
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
+
+\item{metadata}{an optional data frame with metadata items as columns, where samples are in the same order as in abundances and all items are numeric; a bipartite network will be computed}
 
 \item{methods}{network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"}
 
@@ -72,6 +74,8 @@ means a stronger association.
 Edge signs (co-presence/mutual exclusion) are assigned using thresholds (T.up/T.down directly or indirectly via top/bottom initial edge number).
 Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exclusion (low correlation/high dissimilarity) in red and sign conflicts
 (lack of agreement between methods) in gray.
+When metadata are provided, a bipartite network is computed. To circumvent bipartite network computation, metadata can be appended to abundances to form a single
+input matrix, but in this case, preprocessing on abundance data needs to be carried out before.
 }
 \examples{
 data("ibd_taxa")

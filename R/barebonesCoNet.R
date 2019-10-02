@@ -14,8 +14,11 @@
 #' Edge signs (co-presence/mutual exclusion) are assigned using thresholds (T.up/T.down directly or indirectly via top/bottom initial edge number).
 #' Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exclusion (low correlation/high dissimilarity) in red and sign conflicts
 #' (lack of agreement between methods) in gray.
+#' When metadata are provided, a bipartite network is computed. To circumvent bipartite network computation, metadata can be appended to abundances to form a single
+#' input matrix, but in this case, preprocessing on abundance data needs to be carried out before.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
+#' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and all items are numeric; a bipartite network will be computed
 #' @param methods network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"
 #' @param T.up upper threshold for scores (when more than one network construction method is provided, T.up is ignored)
 #' @param T.down lower threshold for scores (when more than one network construction method is provided, T.down is ignored)
@@ -46,7 +49,7 @@
 #' # combine Bray Curtis and Spearman without computing p-values
 #' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
 #' @export
-barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.down=NA, method.num.T=2, pval.T=0.05, init.edge.num=max(2,round(sqrt(nrow(abundances)))), min.occ=0, keep.filtered=TRUE, norm=FALSE, stand.rows=FALSE, pval.cor=FALSE, permut=FALSE, renorm=FALSE, permutandboot=FALSE, iters=100, bh=TRUE, pseudocount=0.00000000001, plot=FALSE, verbose=FALSE){
+barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"), T.up=NA, T.down=NA, method.num.T=2, pval.T=0.05, init.edge.num=max(2,round(sqrt(nrow(abundances)))), min.occ=0, keep.filtered=TRUE, norm=FALSE, stand.rows=FALSE, pval.cor=FALSE, permut=FALSE, renorm=FALSE, permutandboot=FALSE, iters=100, bh=TRUE, pseudocount=0.00000000001, plot=FALSE, verbose=FALSE){
 
   correlations=c("pearson","spearman")
   bh.selected=bh
@@ -60,6 +63,8 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
   #print(total.edge.num)
   #print(init.edge.num)
   default.init.edge.num=max(2,round(sqrt(N)))
+  taxon.names=c()
+  metadata.names=c()
 
   methods=unique(methods)
 
@@ -98,7 +103,7 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
 
   ### Preprocessing
   abundances = filterTaxonMatrix(abundances,keepSum = keep.filtered, minocc=min.occ)
-  N=nrow(abundances)
+
   # normalize matrix
   if(norm == TRUE){
     abundances=normalize(abundances)
@@ -108,12 +113,23 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
     abundances = t(normalize(t(abundances)))
   }
 
+  if(!is.null(metadata)){
+    metadata.names=colnames(metadata) # metadata items are columns
+    taxon.names=rownames(abundances)
+    #print(dim(metadata))
+    abundances=rbind(abundances,t(metadata)) # append metadata
+  }
+
+  # update row number
+  N=nrow(abundances)
+
   ### Network construction
   # loop selected methods
   for(method in methods){
     sign.matrix=matrix(NA,nrow=N,ncol=N)
     renorm.selected=renorm
     print(paste("Processing method",method))
+    # initial edge number provided
     if(!is.na(init.edge.num) && init.edge.num>0){
       #  get score matrix
       scores=getScores(abundances,method=method, pseudocount=pseudocount)
@@ -127,16 +143,8 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
       T.up=scorevec[(length(scorevec)-init.edge.num)]
       print(paste("Lower threshold for initial edge number (",init.edge.num,"): ",T.down,sep=""))
       print(paste("Upper threshold for initial edge number (",init.edge.num,"): ",T.up,sep=""))
-      # compute sign matrix given thresholds
-      if(method %in% correlations){
-        sign.matrix[scores>=T.up]=1 # copresence
-        sign.matrix[scores<=T.down]=-1 # mutual exclusion
-      }else{
-        # dissimilarity: scores above T.up represent exclusion
-        sign.matrix[scores>=T.up]=-1 # exclusion
-        sign.matrix[scores<=T.down]=1 # copresence
-      }
-      sign.matrix.list[[method]]=sign.matrix
+      # compute sign matrix
+      sign.matrix.list[[method]]=computeSignMatrix(scores,method)
       # set scores to avoid to NA
       forbidden.combis=scores
       forbidden.combis[forbidden.combis>T.up]=Inf
@@ -145,6 +153,9 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
       #forbidden.indices=which(forbidden.combis>T.down && forbidden.combis<T.up,arr.ind = TRUE)
       scores[is.na(forbidden.combis)]=NA
       forbidden.combis=scores
+      if(!is.null(metadata)){
+        forbidden.combis=forbiddenCombisBipartite(separator.index = (length(taxon.names)+1), forbidden.combis = forbidden.combis)
+      }
       #print(scores)
       # thresholds are not applied when initial edge number is indicated
       T.down=NA
@@ -152,12 +163,30 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
       if(renorm == TRUE & (method == "kld" || method == "bray")){
         renorm.selected=FALSE # kld and bray are compositionality-robust
       }
+    } # end initial edge number given
+    else{
+      if(!is.null(metadata)){
+        forbidden.combis=getScores(abundances,method=method, pseudocount=pseudocount)
+        # compute sign matrix
+        sign.matrix.list[[method]]=computeSignMatrix(forbidden.combis,method)
+        forbidden.combis=forbiddenCombisBipartite(separator.index = (length(taxon.names)+1), forbidden.combis = forbidden.combis)
+      }
     }
     res=computeAssociations(abundances,method=method, forbidden.combis = forbidden.combis, pval.T = pval.T, bh=bh, T.down=T.down, T.up=T.up, pval.cor = pval.cor, renorm=renorm.selected, permut=permut, permutandboot = permutandboot, verbose=verbose, plot=plot, iters=iters, pseudocount=pseudocount)
     resultList[[method]]=res
+    # no initial edge number specified: collect sign matrix
+    if((is.na(init.edge.num) || init.edge.num==0) && is.null(metadata)){
+      sign.matrix.list[[method]]=res$signs
+    }
   }
 
-  print(paste("Associations computed for",N,"taxa"))
+  #print(length(sign.matrix.list))
+
+  if(!is.null(metadata)){
+    print(paste("Associations computed for",length(taxon.names),"taxa and",length(metadata.names),"metadata."))
+  }else{
+    print(paste("Associations computed for",N,"taxa."))
+  }
 
   score.matrix=matrix(0,nrow=N,ncol=N) # stores weights and signs
   pvalue.matrix=matrix(NA,nrow=N,ncol=N) # stores p-values
@@ -293,10 +322,19 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
   adjacency.matrix=as_adj(res.graph, type="both", names=TRUE)
   #print(adjacency.matrix[2:10,])
   colors=c()
+  nodecolors=c() # only needed for the bipartite case
   # assign signs as colors
   # graph is symmetric
   # igraph doc: The order of the vertices are preserved, i.e. the vertex corresponding to the first row will be vertex 0 in the graph, etc.
   for(i in 1:N){
+    # color nodes of both types differently
+    if(!is.null(metadata)){
+      if(i>length(taxon.names)){
+        nodecolors=c(nodecolors,"lightblue")
+      }else{
+        nodecolors=c(nodecolors,"salmon")
+      }
+    }
     for(j in 1:i){
       # skip diagonal
       if(i != j){
@@ -320,6 +358,9 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
     warning("The inferred network is empty.")
   }else{
     E(res.graph)$color=colors
+    if(!is.null(metadata)){
+      V(res.graph)$color=nodecolors
+    }
     print(paste("Network has",length(E(res.graph)),"edges."))
     # do statistics
     num.pos=length(which(colors=="green"))
@@ -340,16 +381,22 @@ barebonesCoNet<-function(abundances, methods=c("spearman","kld"), T.up=NA, T.dow
     }
   }
   # remove orphan nodes
-  res.graph=delete.vertices(res.graph,degree(res.graph)==0)
+  res.graph=delete.vertices(res.graph,igraph::degree(res.graph)==0) # degree is hidden by bnlearn
   return(res.graph)
 }
 
-# Compute row-wise associations and their p-values using the selected methods. If thresholds are provided, apply them.
+# Compute row-wise associations and their p-values for the selected method. If thresholds are provided, apply them.
 computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", permut=FALSE, bh=TRUE, T.down=NA, T.up=NA, pval.T=0.05, pval.cor=FALSE, renorm=FALSE, permutandboot=TRUE, iters=1000, verbose=FALSE, plot=FALSE, pseudocount=NA){
+  print(paste("Renormalisation is",renorm))
+  print(paste("P-values of correlations are computed with cor.test",pval.cor))
+  print(paste("Permutations and bootstraps are both computed",permutandboot))
+
   N=nrow(abundances)
   #print(paste("p-value from cor.test?",pval.cor))
   correlations=c("spearman","pearson")
-  print(dim(forbidden.combis))
+  #print(dim(forbidden.combis))
+
+  sign.matrix = matrix(NA,nrow=N,ncol=N)
 
   ### compute p-values
   pvals = matrix(NA,nrow=N,ncol=N)
@@ -381,11 +428,14 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
 
   # if provided, set forbidden combinations
   if(!is.null(forbidden.combis)){
-    # scores have been computed previously for the thresholds and are re-used
+    # scores have been computed previously for the thresholds or bipartite network and are re-used
+    # sign matrix has been computed previously
     scores=forbidden.combis
   }else{
     scores=getScores(abundances,method=method,pseudocount=pseudocount)
     #print(scores[1,1:10])
+    # compute sign matrix
+    sign.matrix=computeSignMatrix(scores,method)
   }
   #print(scores)
 
@@ -430,10 +480,49 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
     hist(values, main=paste(what," distribution for method ",method,sep=""), xlab=paste(what,"s",sep=""), ylab="Frequency")
   }
 
-  # return score matrix (storage) and pvals matrix
-  out=list(storage, pvals)
-  names(out)=c("scores","pvalues")
+  # return score matrix (storage), pvals and sign matrix
+  out=list(storage, pvals,sign.matrix)
+  names(out)=c("scores","pvalues","signs")
   return(out)
+}
+
+# enforce bipartiteness given the separating row index and the matrix with forbidden combinations
+# separator.index: first index where rows from metadata start
+forbiddenCombisBipartite<-function(separator.index=NA,forbidden.combis=NULL){
+  for(i in 1:nrow(forbidden.combis)){
+    for(j in 1:nrow(forbidden.combis)){
+      # edge is within node set 1
+      if(i<separator.index && j<separator.index){
+        forbidden.combis[i,j]=NA
+      }
+      # edge is within node set 2
+      if(i>=separator.index && j>=separator.index){
+        forbidden.combis[i,j]=NA
+      }
+    }
+  }
+  return(forbidden.combis)
+}
+
+# scores is a score matrix computed with the given method
+computeSignMatrix<-function(scores, method="bray"){
+  sign.matrix = matrix(NA,nrow=nrow(scores),ncol=ncol(scores))
+  correlations=c("spearman","pearson")
+  if(method %in% correlations){
+    sign.matrix[scores>=0]=1 # copresence
+    sign.matrix[scores<0]=-1 # mutual exclusion
+  }else{
+    if(method=="bray"){
+      # Bray Curtis is bounded between 0 and 1, 1 being maximal dissimilarity
+      sign.matrix[scores>0.5]=-1 # exclusion
+      sign.matrix[scores<=0.5]=1 # copresence
+    }else if(method=="kld"){
+        mid.point=mean(range(scores))
+        sign.matrix[scores>mid.point]=-1 # exclusion
+        sign.matrix[scores<=mid.point]=1 # copresence
+    }
+  }
+  return(sign.matrix)
 }
 
 # correct a pvalue matrix for multiple testing with Benjamini-Hochberg
