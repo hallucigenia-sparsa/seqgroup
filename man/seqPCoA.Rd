@@ -5,15 +5,17 @@
 \title{PCoA for microbial sequencing data}
 \usage{
 seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
-  refName = "ref", metadata = NULL, groupAttrib = "", groups = c(),
-  groupColors = NULL, colors = c(), clusters = c(), labels = c(),
-  sizes = c(), size.legend = "", time = c(), hiddenSamples = c(),
-  dis = "bray", rda = FALSE, scale = FALSE, doScree = FALSE,
-  topTaxa = 10, topMetadata = 10, arrowFactor = 0.5,
-  metadataFactor = 1, centroidFactor = 1, taxonColor = "brown",
-  metadataColor = "blue", xlim = NULL, ylim = NULL, permut = 1000,
-  env.permut = 1000, pAdjMethod = "BH", qvalThreshold = 0.05,
-  dimensions = c(1, 2), ...)
+  addToRefStepwise = FALSE, refName = "ref", metadata = NULL,
+  groupAttrib = "", groups = c(), groupColors = NULL, colors = c(),
+  clusters = c(), labels = c(), sizes = c(), size.legend = "",
+  time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
+  scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
+  arrowFactor = 0.5, metadataFactor = 1, centroidFactor = 1,
+  taxonColor = "brown", metadataColor = "blue", drawEllipse = FALSE,
+  clusterQualityIndex = "CH", groupDispersion = FALSE, xlim = NULL,
+  ylim = NULL, permut = 1000, env.permut = 1000, pAdjMethod = "BH",
+  qvalThreshold = 0.05, ellipseConf = 0.95, dimensions = c(1, 2),
+  ...)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -21,6 +23,8 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 \item{reference}{an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)}
 
 \item{rarefyRef}{rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ}
+
+\item{addToRefStepwise}{compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda or drawEllipse}
 
 \item{refName}{group name for reference samples}
 
@@ -68,17 +72,25 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{metadataColor}{the color of the metadata arrows and text}
 
+\item{drawEllipse}{if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)}
+
+\item{clusterQualityIndex}{if groups or groupAttrib given, report cluster quality according to any criterium supported by package clusterCrit (default: Calinski Harabasz, set to none to disable computation of cluster quality)}
+
+\item{groupDispersion}{if groups or groupAttrib given, report Tukey's HSD test on differences in group dispersions (avg distance of group members to centroid) and do boxplot (wraps vegan's betadisper)}
+
 \item{xlim}{range shown on the x axis, by default the minimum and maximum of the first selected component}
 
 \item{ylim}{range shown on the y axis, by default the minimum and maximum of the second selected component}
 
 \item{permut}{number of permutations for top-covarying taxa; if NA, NULL or smaller than 1, no permutation test is carried out}
 
-\item{env.permut}{number of permutations for envfit}
+\item{env.permut}{number of permutations for envfit, if drawEllipse is true, for adonis}
 
 \item{pAdjMethod}{method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values}
 
 \item{qvalThreshold}{threshold on multiple-testing corrected top-covarying taxon and envfit p-values}
+
+\item{ellipseConf}{confidence limit for drawEllipse}
 
 \item{dimensions}{the principal components used for plotting, by default the first and second}
 
@@ -103,12 +115,19 @@ In contrast, envfit p-values are computed for all metadata and multiple-testing 
 only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
 topMetadata ranks metadata by significance.
 The number in the axis label brackets refers to the proportion of variance explained as computed with vegan's eigenvals function.
+Note that ordination values in plots are not scaled (equivalent to plot.cca(scaling=0)).
+If groups are provided, drawEllipse can be enabled to draw ellipses with vegan's ordiellipse and to run vegan's adonis (PERMANOVA) to assess whether group composition
+differs significantly. Adonis is sensitive to differences in within-group variation. To assess whether within-group variation differs, betadisper can be carried out by
+enabling groupDispersion.
+In addition, if groups are provided, seqPCoA computes cluster quality indices to assess group separation with package clusterCrit.
+Concerning interpretation of cluster quality indices: The silhouette index ranges between -1 and 1, a large Dunn's, Silhouette or Calinski-Harabasz index and a small
+Davies-Bouldin or C-index indicate well-defined clusters, respectively.
 }
 \examples{
 data("ibd_taxa")
 data("ibd_metadata")
 ibd_metadata=assignMetadataTypes(ibd_metadata,categoric=c("SRA_metagenome_name","Diagnosis"))
-seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
+seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30, drawEllipse=TRUE)
 # remove 65 samples with missing calprotectin measurements or other missing values in the metadata
 na.indices=unique(which(is.na(ibd_metadata),arr.ind=TRUE)[,1])
 indices.to.keep=setdiff(1:nrow(ibd_metadata),na.indices)

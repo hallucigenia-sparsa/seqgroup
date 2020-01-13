@@ -17,10 +17,18 @@
 #' only the selected number of most significant metadata are shown. Thus, topTaxa ranks taxa by covariance with significance as a filter, whereas
 #' topMetadata ranks metadata by significance.
 #' The number in the axis label brackets refers to the proportion of variance explained as computed with vegan's eigenvals function.
+#' Note that ordination values in plots are not scaled (equivalent to plot.cca(scaling=0)).
+#' If groups are provided, drawEllipse can be enabled to draw ellipses with vegan's ordiellipse and to run vegan's adonis (PERMANOVA) to assess whether group composition
+#' differs significantly. Adonis is sensitive to differences in within-group variation. To assess whether within-group variation differs, betadisper can be carried out by
+#' enabling groupDispersion.
+#' In addition, if groups are provided, seqPCoA computes cluster quality indices to assess group separation with package clusterCrit.
+#' Concerning interpretation of cluster quality indices: The silhouette index ranges between -1 and 1, a large Dunn's, Silhouette or Calinski-Harabasz index and a small
+#' Davies-Bouldin or C-index indicate well-defined clusters, respectively.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
 #' @param rarefyRef rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ
+#' @param addToRefStepwise compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda or drawEllipse
 #' @param refName group name for reference samples
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
@@ -44,19 +52,23 @@
 #' @param centroidFactor centroid positions (representing categoric metadata) are multiplied with this factor
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
+#' @param drawEllipse if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)
+#' @param clusterQualityIndex if groups or groupAttrib given, report cluster quality according to any criterium supported by package clusterCrit (default: Calinski Harabasz, set to none to disable computation of cluster quality)
+#' @param groupDispersion if groups or groupAttrib given, report Tukey's HSD test on differences in group dispersions (avg distance of group members to centroid) and do boxplot (wraps vegan's betadisper)
 #' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
 #' @param ylim range shown on the y axis, by default the minimum and maximum of the second selected component
 #' @param permut number of permutations for top-covarying taxa; if NA, NULL or smaller than 1, no permutation test is carried out
-#' @param env.permut number of permutations for envfit
+#' @param env.permut number of permutations for envfit, if drawEllipse is true, for adonis
 #' @param pAdjMethod method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values
 #' @param qvalThreshold threshold on multiple-testing corrected top-covarying taxon and envfit p-values
+#' @param ellipseConf confidence limit for drawEllipse
 #' @param dimensions the principal components used for plotting, by default the first and second
 #' @param \\dots Additional arguments passed to plot()
 #' @examples
 #' data("ibd_taxa")
 #' data("ibd_metadata")
 #' ibd_metadata=assignMetadataTypes(ibd_metadata,categoric=c("SRA_metagenome_name","Diagnosis"))
-#' seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30)
+#' seqPCoA(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),topTaxa=30, drawEllipse=TRUE)
 #' # remove 65 samples with missing calprotectin measurements or other missing values in the metadata
 #' na.indices=unique(which(is.na(ibd_metadata),arr.ind=TRUE)[,1])
 #' indices.to.keep=setdiff(1:nrow(ibd_metadata),na.indices)
@@ -66,7 +78,19 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, clusterQualityIndex="CH", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
+
+  # Test
+  # path.vdp="/Users/u0097353/Documents/Documents_Karoline/MSysBio_Lab/Results/Nephrology/Data/vdp_genera.txt"
+  # vdp=read.table(path.vdp,row.names=1,header=TRUE,sep="\t")
+  # data("ibd_lineages")
+  # ibd.genera=aggregateTaxa(ibd_taxa, lineages=ibd_lineages,taxon.level="genus")
+  # ibd.genera.counts = round(ibd.genera*10000) # scale to counts (vdp already sums to 10K)
+  # seqPCoA(ibd.genera.counts,reference=vdp, rarefyRef=TRUE, groups=groups, drawEllipse = TRUE, topMetadata = 0) # 53 matching genera
+  # # beautified:
+  # seqPCoA(ibd.genera.counts,reference=vdp, rarefyRef=TRUE, groups=groups, drawEllipse = TRUE, topMetadata = 0, xlim=c(-0.1,0.15), ylim=c(-0.1,0.1), arrowFactor=0.0001, clusterQualityIndex = "silhouette")
+  # test step-wise
+  # seqPCoA(ibd.genera.counts[,1:20],reference=vdp, rarefyRef=TRUE, groups=groups,xlim=c(-0.1,0.15), ylim=c(-0.1,0.1), addToRefStepwise = TRUE)
 
   if(length(clusters)>0){
     clusters=as.character(clusters)
@@ -83,18 +107,57 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     stop("RDA is not supported when a reference is provided.")
   }
 
-  if(topMetadata > 0 && !is.null(reference)){
-    stop("Envfit is not supported when a reference is provided.")
+  if(addToRefStepwise && is.null(reference)){
+    stop("A reference is needed to add samples to reference step-wise.")
   }
 
+  if(doScree && addToRefStepwise){
+    stop("Scree plot is not available for step-wise addition of samples to reference.")
+  }
+
+  if(rda && addToRefStepwise){
+    stop("RDA is not available for step-wise addition of samples to reference.")
+  }
+
+  # make it easier for users
+  if(addToRefStepwise){
+    if(topTaxa>0){
+      print("Biplot with taxa is not available for step-wise addition of samples to reference. TopTaxa is set to 0.")
+    }
+    topTaxa=0
+    if(!is.null(metadata)){
+      print("Metadata cannot be handled when samples are added step-wise to reference. Metadata are ignored.")
+    }
+    metadata=NULL
+  }
+
+  # if no metadata are provided, we cannot look for top-significant metadata items
+  if(is.null(metadata)){
+    topMetadata=0
+  }
+
+  # TODO: there is no reason why envfit is not supported in case metadata object provides data for both - to be modified
+  if(topMetadata > 0 && !is.null(reference)){
+    stop("Envfit is not supported when a reference is provided. Please set topMetadata to 0.")
+  }
+
+  lastIndexRef=0
+
   if(!is.null(reference)){
+    lastIndexRef=ncol(reference)
     # match abundances and reference by their row names
     res=intersectTables(reference,abundances,byRow = TRUE, keepSumNonMatched = TRUE)
     # append matched abundances to reference
     abundances=cbind(res$table1,res$table2)
     if(rarefyRef){
       # rarefy and discard taxa with zero abundance after rarefaction
-      abundances=rarefyFilter(abundances)$rar
+      filtered=rarefyFilter(abundances)
+      abundances=filtered$rar
+      # update lastIndexRef to deal with columns removed during rarefaction
+      ref.indices=intersect(1:lastIndexRef, filtered$colindices)
+      lastIndexRef=length(ref.indices)
+      # check
+      print(paste("Name of last reference sample:",colnames(abundances))[lastIndexRef])
     }
     if(length(groups)>0){
       if(length(groups)!=ncol(abundances)){
@@ -130,6 +193,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   } # reference provided
 
   if(!is.null(metadata) && scale){
+    # print("Scaling metadata")
     numeric.metadata=getMetadataSubset(metadata,type="numeric")
     catbin.metadata=getMetadataSubset(metadata,type="catbin")
     scaled.numeric.metadata=scale(numeric.metadata,center=TRUE, scale=TRUE)
@@ -143,10 +207,43 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
   clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
   display.size.legend=FALSE
+  sample.coords=matrix(NA, nrow=ncol(abundances),ncol=2) # samples x axes
 
   if(rda){
 
+    # it is not possible to give dissimilarities to capscale, so they need to be recomputed in case betadisper is enabled
      pcoa.res=capscale(data.frame(t(abundances))~.,metadata,distance=dis, na.action = "na.omit")
+
+  }else if(addToRefStepwise){
+
+    # loop over samples, carry out PCoA and extract coordinates of joint ordination with reference
+    background=abundances[,1:lastIndexRef]
+    samples=abundances[,(lastIndexRef+1):ncol(abundances)]
+    print(paste("Carrying out",ncol(samples),"ordinations to match samples to reference one by one"))
+    # loop samples to match to the background
+    for(ord.index in 0:ncol(samples)){
+      if(ord.index==0){
+        matched=background
+      }else{
+        matched=cbind(background,samples[,ord.index])
+      }
+      if(dis=="cor"){
+        # carry out standard PCA
+        pcoa.res=rda(data.frame(t(matched)), scale=TRUE, na.action = "na.omit")
+      }else{
+        pcoa.res=capscale(data.frame(t(matched))~1,distance=dis, na.action = "na.omit")
+      }
+      # fill background sample positions from PCoA without extra sample
+      if(ord.index==0){
+        sample.coords[1:lastIndexRef,]=pcoa.res$CA$u[, dimensions]
+      }else{
+        print(paste("Completed ordination",ord.index))
+        # extract coordinates of sample ordinated together with background
+        sample.coords[(lastIndexRef+ord.index),]=pcoa.res$CA$u[(lastIndexRef+1), dimensions]
+      }
+    }
+    # check
+    #print(sample.coords[1:100,])
 
   }else{
     # carry out PCoA
@@ -209,12 +306,18 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
   if(dis=="cor"){
     redun.method="PCA"
   }
-  # proportion of variance explained
-  eig.sum=summary(eigenvals(pcoa.res))
-  var.explained.1=eig.sum[2,dimensions[[1]]] # second row of eigenvalue summary: proportion of variance explained
-  var.explained.2=eig.sum[2,dimensions[[2]]]
-  xlab=paste(redun.method,dimensions[1]," [",round(var.explained.1,2),"]",sep="")
-  ylab=paste(redun.method,dimensions[2]," [",round(var.explained.2,2),"]",sep="")
+
+  if(!addToRefStepwise){
+    # proportion of variance explained
+    eig.sum=summary(eigenvals(pcoa.res))
+    var.explained.1=eig.sum[2,dimensions[[1]]] # second row of eigenvalue summary: proportion of variance explained
+    var.explained.2=eig.sum[2,dimensions[[2]]]
+    xlab=paste(redun.method,dimensions[1]," [",round(var.explained.1,2),"]",sep="")
+    ylab=paste(redun.method,dimensions[2]," [",round(var.explained.2,2),"]",sep="")
+  }else{
+    xlab=paste(redun.method,dimensions[1],sep="")
+    ylab=paste(redun.method,dimensions[2],sep="")
+  }
 
   if(length(colors)>0){
     # use pre-assigned colors
@@ -271,7 +374,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     display.size.legend=TRUE
     # shift into positive range
     if(min(sizes)<0){
-      sizes=sizes-min(sizes) # - - value adds the valye
+      sizes=sizes-min(sizes)
     }
     # scale between 0.5 and 2.5
     sizes=(sizes-min(sizes))/(0.5*max(sizes)-min(sizes))
@@ -281,7 +384,11 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
     sizes=rep(par()$cex,length(selected.sample.indices)) # default size
   }
 
-  plot(pcoa.res$CA$u[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+  if(!addToRefStepwise){
+    plot(pcoa.res$CA$u[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+  }else{
+    plot(sample.coords[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+  }
 
   # add sample labels if requested
   if(length(labels)>0){
@@ -299,6 +406,37 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       } # visible
     } # loop samples
   } # time provided
+
+  groups.factor=factor(groups,levels=unique(groups))
+  # add ellipses if requested
+  if(drawEllipse==TRUE && !addToRefStepwise){
+    if(length(groups)==0){
+      warning("Please specify groups in order to draw ellipses!")
+    }else{
+      # draw transparent ellipses around samples of the same groups with given confidence
+      # by default, color order is not correct, because ordiellipse calls factor on the groups, which sorts entries alphabetically
+      # for this reason, factor with correct ordering is reassigned to groups
+      ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",col=unique(colors),alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=0)
+      # adonis fails for step-wise addition of samples to reference
+      adonis_results = adonis(data.frame(t(abundances)) ~ groups.factor, permutations = env.permut, method=dis)
+      # variance explained through groups
+      adonis.r2=adonis_results$aov.tab[1,5]
+      adonis.pval=adonis_results$aov.tab[1,6]
+      print("Adonis to test for significant difference in group compositions")
+      print(paste("Adonis R2: ",round(adonis.r2,4),", p-value: ",round(adonis.pval,4),sep=""))
+    }
+  }
+
+  # report cluster quality of groups
+  if(length(groups)>0){
+    if(clusterQualityIndex != "" && clusterQualityIndex != "none"){
+      if(clusterQualityIndex=="CH"){
+        clusterQualityIndex="Calinski_Harabasz"
+      }
+      print(paste("Cluster quality index", clusterQualityIndex))
+      print(intCriteria(t(abundances), part=groupsToNumeric(groups), crit=clusterQualityIndex)[[1]])
+    }
+  }
 
   if(topTaxa>0){
     # taken from biplot.pcoa in ape
@@ -422,7 +560,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       sig.factors=names(indices.factors)
       # find centroids belonging to significant factors
       # centroid: mean or median dissimilarity of samples belonging to given level of a factor in PCoA
-      # significance of centroid separation: TukeyHSD?
+      # significance of centroid separation: now assessed with adonis
       for(sig.factor in sig.factors){
         sig.factor.centroid.indices=which(ef$factors$var.id==sig.factor)
         # several values of the categoric variable can be significant
@@ -451,6 +589,22 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, refName="ref", me
       max.legend=paste(max.legend," ",size.legend,sep="")
     }
     legend("bottomleft",legend=c(min.legend,max.legend),pt.cex=c(min.cex,max.cex), pch = c(1,1), col = "black", bg = "white", text.col="black")
+  }
+
+  # A non-significant result in betadisper is not necessarily related to a significant/non-significant result in adonis.
+  # Betadisper tests homogeneity of dispersion among groups, which is a condition (assumption) for adonis.
+  # Betadisper can be done to see if one group has more compositional variance than another.
+  # Adonis tests whether composition among groups is similar or not.
+  if(groupDispersion){
+    beta.out=betadisper(vegdist(t(abundances),method=dis), groups.factor, type='centroid')
+    print("Tukey's HSD to test for significant differences in group variance (betadisper)")
+    t.hsd=TukeyHSD(beta.out)
+    print(t.hsd$group)
+    # fourth column: p-values
+    if(length(which(t.hsd$group[,4]<0.05))){
+      print("Variance differs signficantly for at least 2 groups, so adonis results may be biased!")
+    }
+    boxplot(beta.out,xlab="Group")
   }
 
 }
@@ -513,6 +667,19 @@ assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap
   }
   return(colors)
 }
+
+# convert a group vector with strings in a numeric vector of cluster membership integers
+groupsToNumeric<-function(groups=c()){
+  clus.mem=groups
+  groups.unique=unique(groups)
+  for(i in 1:length(groups.unique)){
+    current.group=groups.unique[i]
+    group.indices=which(groups==current.group)
+    clus.mem[group.indices]=i
+  }
+  return(as.integer(as.numeric(clus.mem)))
+}
+
 
 # compute the norm of a vector
 myNorm<-function(x){
