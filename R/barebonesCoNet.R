@@ -31,7 +31,7 @@
 #' @param stand.rows standardize rows by dividing each entry by its corresponding row sum, applied after normalization
 #' @param pval.cor compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and/or permutandboot with or without renorm)
 #' @param permut compute p-values on edges with a permutation test
-#' @param renorm compute p-values with a permutation test, using renormalization (only applied to correlations)
+#' @param renorm compute p-values with a permutation test, using renormalization (only applied to correlations; cannot be combined with metadata)
 #' @param permutandboot compute p-values from both permutation (with or without renorm) and bootstrap distribution
 #' @param iters number of iterations for the permutation test
 #' @param bh multiple-test-correct using Benjamini-Hochberg; if several methods are provided bh is applied to merged p-value
@@ -45,9 +45,9 @@
 #' ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
 #' min.occ=nrow(ibd_genera)/3
 #' # p-values for the 50 strongest positive and 50 strongest negative Spearman correlations
-#' plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,pval.cor=TRUE))
-#' # combine Bray Curtis and Spearman without computing p-values
-#' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
+#' plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE))
+#' # combine Bray Curtis and Spearman and threshold on p-values
+#' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ, permutandboot=TRUE))
 #' @export
 barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"), T.up=NA, T.down=NA, method.num.T=2, pval.T=0.05, init.edge.num=max(2,round(sqrt(nrow(abundances)))), min.occ=0, keep.filtered=TRUE, norm=FALSE, stand.rows=FALSE, pval.cor=FALSE, permut=FALSE, renorm=FALSE, permutandboot=FALSE, iters=100, bh=TRUE, pseudocount=0.00000000001, plot=FALSE, verbose=FALSE){
 
@@ -83,6 +83,10 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
     }
   }
 
+  if(!is.null(metadata) && renorm==TRUE){
+    stop("Renormalisation with metadata is not supported.")
+  }
+
   if(permut==TRUE && iters < 1){
     stop("iters should be at least 1.")
   }
@@ -99,6 +103,12 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
     if(pval.cor == TRUE & (method == "kld" || method == "bray")){
       stop("P-value computation with cor.test is only possible for correlations!")
     }
+  }
+
+  if(pseudocount<=0){
+    stop("Pseudocount has to be set to a small positive number.")
+    #pseudocount=min(matrix[matrix>0])/100
+    #print(paste("Pseudocount:",pseudocount))
   }
 
   ### Preprocessing
@@ -627,20 +637,16 @@ normalize<-function(x){
 # renorm renormalize after permutation
 # permutandboot compute a bootstrap distribution in addition to the permutation distribution and
 #                 return the p-value as the mean of the permutation distribution under the bootstrap distribution
-# plot plot the histogram of the permutation and, if permutandboot is true, of the bootstrap distribution
+# plot plot the histogram of the permutation and, if permutandboot is true, of both the permutation and the bootstrap distribution
 # verbose print distribution properties and p-value
 # pseudocount pseudocount used when computing KLD
 #
 # p-value of the association
-getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, plot=F, verbose=F,  pseudocount=NA) {
-  x = matrix[x.index,]
-  y = matrix[y.index,]
-  lower.tail = TRUE
+getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, plot=F, verbose=F,  pseudocount=0.00000001) {
+  x = as.numeric(matrix[x.index,])
+  y = as.numeric(matrix[y.index,])
+  lower.tail = FALSE
   #print(paste("Renorm applied:",renorm))
-  # bray and kld are dissimilarities, so one-sided p-value needs to be computed from the upper tail
-  if(method == "bray" || method == "kld"){
-    lower.tail = FALSE
-  }
   if(method == "spearman"){
     this.sim = cor(x, y, use="complete.obs", method="spearman")
   }else if(method == "pearson"){
@@ -674,15 +680,15 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
     }
   }
   rand.sim = na.omit(rand.sim)
-  if(plot == T){
+  if(plot == TRUE && permutandboot == FALSE){
     col1=rgb(0,0,1,1/3)
     col2=rgb(1,0,0,1/3)
     hist(rand.sim,col=col1)
     abline(v=mean(rand.sim),col="blue")
   }
   if(permutandboot){
-    x=matrix[x.index,]
-    y=matrix[y.index,]
+    x=as.numeric(matrix[x.index,])
+    y=as.numeric(matrix[y.index,])
     for (i in 1:N.rand) {
       rand.idx = sample(1:length(x),replace=TRUE)
       x.boot=x[rand.idx]
@@ -696,15 +702,20 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
       }else if(method == "kld"){
         boot.sim[i] = get.kld(x.boot,y.boot, pseudocount = pseudocount)
       }
+     # print(boot.sim[i])
     }
     boot.sim = na.omit(boot.sim)
-    if(plot == T){
-      hist(boot.sim,col=col2,add=T)
-      abline(v=mean(boot.sim),col="red")
-      legend(x="topleft", c("Permut","Boot"), bg="white",col=c(col1,col2),lty=rep(1,2),merge=T)
+    if(plot == TRUE){
+      compareDistribsPure(rand.sim,boot.sim, main="Distributions", name1="Permutations", name2="Bootstraps")
     }
     # if we got enough non-NA permutation and bootstrap values, compute p-value
     if(length(rand.sim) > round(N.rand/3) && length(boot.sim) > round(N.rand/3)){
+      # determine tail based on mean of permutation and bootstrap distributions
+      if(mean(boot.sim)>mean(rand.sim)){
+        lower.tail=TRUE
+      }else{
+        lower.tail=FALSE
+      }
       pval = pnorm(mean(rand.sim),mean=mean(boot.sim),sd=sd(boot.sim), lower.tail=lower.tail)
     }else{
       pval = 0.5
@@ -712,10 +723,18 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
   }else{
     # if we got enough non-NA permutation values, compute p-value
     if(length(rand.sim) > round(N.rand/3)){
+      # bray and kld are dissimilarities, so one-sided p-value needs to be computed from the lower tail (the smaller the better)
+      if(method == "bray" || method == "kld"){
+        lower.tail = TRUE
+      }
+      # look at left tail for negative correlations
+      if(this.sim<0 && (method == "spearman" || method == "pearson")){
+        lower.tail=TRUE
+      }
       if (lower.tail) {
-        pval = (sum(this.sim > rand.sim) / length(rand.sim))
+        pval = ((1+sum(this.sim > rand.sim))) / (1+length(rand.sim))
       } else {
-        pval = (sum(this.sim < rand.sim) / length(rand.sim))
+        pval = ((1+sum(this.sim < rand.sim)) / (1+length(rand.sim)))
       }
     }else{
       pval = 0.5
@@ -724,10 +743,6 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
   # set missing value (from constant vector) to intermediate p-value (worst possible p-value in this context)
   if(is.na(pval)){
     pval = 0.5
-  }
-  # p-values are one-sided, so high p-values signal mutual exclusion and are converted into low ones
-  if(pval > 0.5){
-    pval = 1 - pval
   }
   if(verbose == T){
     print(paste("p-value =",pval))
