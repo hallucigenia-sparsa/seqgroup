@@ -27,8 +27,11 @@ vegdist_silhouette <- function(abundances, group, method='bray'){
       if (clus == cluster){
         ids <- ids[ids != i]  # distance to self should not be included
         intra_cluster_distance <- mean(row[ids])
-      } else if (meandist < smallest_cluster_distance){
-        smallest_cluster_distance <- mean(row[ids])
+      } else {
+        inter_cluster_distance <- mean(row[ids])
+        if (inter_cluster_distance < smallest_cluster_distance){
+          smallest_cluster_distance <- inter_cluster_distance
+        }
       }
     }
     if (intra_cluster_distance < smallest_cluster_distance){
