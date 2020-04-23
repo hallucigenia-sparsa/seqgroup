@@ -4,8 +4,12 @@
 \alias{assignColorsToGroups}
 \title{Assign colors to groups}
 \usage{
-assignColorsToGroups(groups, refName = "ref", myColors = NULL,
-  returnMap = FALSE)
+assignColorsToGroups(
+  groups,
+  refName = "ref",
+  myColors = NULL,
+  returnMap = FALSE
+)
 }
 \arguments{
 \item{groups}{a vector of group memberships}

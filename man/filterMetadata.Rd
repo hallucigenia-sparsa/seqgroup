@@ -4,8 +4,7 @@
 \alias{filterMetadata}
 \title{Filter metadata}
 \usage{
-filterMetadata(data, toFilter = c(), na.threshold = 0,
-  remove.neg = FALSE)
+filterMetadata(data, toFilter = c(), na.threshold = 0, remove.neg = FALSE)
 }
 \arguments{
 \item{data}{a data frame with metadata items}

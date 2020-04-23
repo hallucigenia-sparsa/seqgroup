@@ -4,11 +4,23 @@
 \alias{buildNetwork}
 \title{Build a microbial network}
 \usage{
-buildNetwork(abundances, lineages = NULL, method = "mb", repNum = 20,
-  minStrength = 0.5, alpha = 0.05, renorm = FALSE,
-  initEdgeNum = 100, methodNum = 2, directed = FALSE,
-  nameLevel = "Genus", colorLevel = "Class", widthFactor = 10,
-  legend = TRUE, left.margin = 10)
+buildNetwork(
+  abundances,
+  lineages = NULL,
+  method = "mb",
+  repNum = 20,
+  minStrength = 0.5,
+  alpha = 0.05,
+  renorm = FALSE,
+  initEdgeNum = 100,
+  methodNum = 2,
+  directed = FALSE,
+  nameLevel = "Genus",
+  colorLevel = "Class",
+  widthFactor = 10,
+  legend = TRUE,
+  left.margin = 10
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}

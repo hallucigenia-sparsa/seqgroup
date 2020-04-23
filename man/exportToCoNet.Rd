@@ -4,11 +4,21 @@
 \alias{exportToCoNet}
 \title{Export taxon abundances in a format suitable for CoNet}
 \usage{
-exportToCoNet(abundances, metadata = NULL, lineages = NULL,
-  groups = c(), export.folder = "", root.name = "conet",
-  metadata.to.skip = c(), omitNeg = TRUE, yes = "Y", no = "N",
-  date.items = c(), date.format = "\%d/\%m/\%y",
-  taxa.are.rownames = FALSE)
+exportToCoNet(
+  abundances,
+  metadata = NULL,
+  lineages = NULL,
+  groups = c(),
+  export.folder = "",
+  root.name = "conet",
+  metadata.to.skip = c(),
+  omitNeg = TRUE,
+  yes = "Y",
+  no = "N",
+  date.items = c(),
+  date.format = "\%d/\%m/\%y",
+  taxa.are.rownames = FALSE
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}

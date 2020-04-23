@@ -4,8 +4,7 @@
 \alias{intersectTables}
 \title{Table intersection}
 \usage{
-intersectTables(table1, table2, byRow = FALSE,
-  keepSumNonMatched = FALSE)
+intersectTables(table1, table2, byRow = FALSE, keepSumNonMatched = FALSE)
 }
 \arguments{
 \item{table1}{a matrix}

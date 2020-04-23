@@ -4,18 +4,48 @@
 \alias{seqPCoA}
 \title{PCoA for microbial sequencing data}
 \usage{
-seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
-  addToRefStepwise = FALSE, refName = "ref", metadata = NULL,
-  groupAttrib = "", groups = c(), groupColors = NULL, colors = c(),
-  clusters = c(), labels = c(), sizes = c(), size.legend = "",
-  time = c(), hiddenSamples = c(), dis = "bray", rda = FALSE,
-  scale = FALSE, doScree = FALSE, topTaxa = 10, topMetadata = 10,
-  arrowFactor = 0.5, metadataFactor = 1, centroidFactor = 1,
-  taxonColor = "brown", metadataColor = "blue", drawEllipse = FALSE,
-  clusterQualityIndex = "CH", groupDispersion = FALSE, xlim = NULL,
-  ylim = NULL, permut = 1000, env.permut = 1000, pAdjMethod = "BH",
-  qvalThreshold = 0.05, ellipseConf = 0.95, dimensions = c(1, 2),
-  ...)
+seqPCoA(
+  abundances,
+  reference = NULL,
+  rarefyRef = FALSE,
+  addToRefStepwise = FALSE,
+  refName = "ref",
+  metadata = NULL,
+  groupAttrib = "",
+  groups = c(),
+  groupColors = NULL,
+  colors = c(),
+  clusters = c(),
+  labels = c(),
+  sizes = c(),
+  size.legend = "",
+  time = c(),
+  hiddenTaxa = c(),
+  hiddenSamples = c(),
+  dis = "bray",
+  rda = FALSE,
+  scale = FALSE,
+  doScree = FALSE,
+  topTaxa = 10,
+  topMetadata = 10,
+  arrowFactor = 0.5,
+  metadataFactor = 1,
+  centroidFactor = 1,
+  taxonColor = "brown",
+  metadataColor = "blue",
+  drawEllipse = FALSE,
+  clusterQualityIndex = "silhouette",
+  groupDispersion = FALSE,
+  xlim = NULL,
+  ylim = NULL,
+  permut = 1000,
+  env.permut = 1000,
+  pAdjMethod = "BH",
+  qvalThreshold = 0.05,
+  ellipseConf = 0.95,
+  dimensions = c(1, 2),
+  ...
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -48,6 +78,8 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)}
 
+\item{hiddenTaxa}{an optional vector with names of taxa to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed among top co-varying taxa)}
+
 \item{hiddenSamples}{an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)}
 
 \item{dis}{dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)}
@@ -74,7 +106,7 @@ seqPCoA(abundances, reference = NULL, rarefyRef = FALSE,
 
 \item{drawEllipse}{if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)}
 
-\item{clusterQualityIndex}{if groups or groupAttrib given, report cluster quality according to any criterium supported by package clusterCrit (default: Calinski Harabasz, set to none to disable computation of cluster quality)}
+\item{clusterQualityIndex}{if groups or groupAttrib given, report cluster quality according to silhouette function or any criterium supported by package clusterCrit (default: silhouette, set to none to disable computation of cluster quality)}
 
 \item{groupDispersion}{if groups or groupAttrib given, report Tukey's HSD test on differences in group dispersions (avg distance of group members to centroid) and do boxplot (wraps vegan's betadisper)}
 

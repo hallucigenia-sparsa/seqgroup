@@ -4,33 +4,42 @@
 #'
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
-#' @param group vector with group membership
+#' @param groups vector with group memberships
 #' @param method name of dissimilarity or distance to use. See vegdist for options
-#' #' @export
+#' @export
 #'
-vegdist_silhouette <- function(abundances, group, method='bray'){
-  if (length(group) == length(colnames(abundances))){
+silhouette <- function(abundances, groups, method='bray'){
+  if (length(groups) == length(colnames(abundances))){
     abundances <- t(abundances)
-  } else if (length(group) != length(rownames(abundances))){
+  } else if (length(groups) != length(rownames(abundances))){
     stop('Group vector is not the same length as the abundance table dimensions.')
   }
-  dis <- as.matrix(vegan::vegdist(abundances, method=method))
+  #print(dim(abundances))
+  dis <- as.matrix(vegdist(abundances, method=method))
   # for every sample in a cluster, calculate silhoutte coefficient
   scores <- c()
+  empty=FALSE
   for (i in 1:nrow(dis)){
     row <- dis[i,]
-    cluster <- group[i]
+    cluster <- groups[i]
     intra_cluster_distance <- 0
     smallest_cluster_distance <- 1
-    for (clus in unique(group)){
-      ids <- which(group == clus)
+    for (clus in unique(groups)){
+      ids <- which(groups == clus)
       if (clus == cluster){
         ids <- ids[ids != i]  # distance to self should not be included
-        intra_cluster_distance <- mean(row[ids])
-      } else if (meandist < smallest_cluster_distance){
+        if(length(ids)==0){
+          warning(paste("Cluster",cluster," of",length(unique(groups)),"clusters is empty! Silhouette is set to NA"))
+          empty=TRUE
+        }else{
+          #print(paste("ids=",ids))
+          intra_cluster_distance <- mean(row[ids])
+        }
+        # fix: replaced meandist below by intra_cluster_distance
+      } else if (intra_cluster_distance < smallest_cluster_distance){
         smallest_cluster_distance <- mean(row[ids])
       }
-    }
+    } # loop clusters
     if (intra_cluster_distance < smallest_cluster_distance){
       silhouette <- 1-(intra_cluster_distance / smallest_cluster_distance)
 
@@ -39,7 +48,12 @@ vegdist_silhouette <- function(abundances, group, method='bray'){
     } else {
       silhouette <- 0
     }
+    if(empty){
+      silhouette=NA
+    }
+    #print(paste("silhouette",silhouette))
     scores <- c(scores, silhouette)
-  }
+  } # loop rows of dissimilarity matrix
+  #print(scores)
   return(mean(scores))
 }

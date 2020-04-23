@@ -4,7 +4,9 @@
 \name{ibd_metadata}
 \alias{ibd_metadata}
 \title{Metadata for the PRISM cohort}
-\format{An object of class \code{data.frame} with 155 rows and 8 columns.}
+\format{
+An object of class \code{data.frame} with 155 rows and 8 columns.
+}
 \usage{
 data(ibd_metadata)
 }

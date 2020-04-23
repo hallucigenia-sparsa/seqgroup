@@ -4,15 +4,31 @@
 \alias{groupBarplot}
 \title{Bar plot of taxon composition with group support}
 \usage{
-groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
-  group.color.map = NULL, topTaxa = 10, sortGroupwise = TRUE,
-  randSampleNum = NA, summedTaxonColor = "#a9a9a9",
-  extendTaxonColorMap = FALSE, legend = TRUE, legend.shift = 1, ...)
+groupBarplot(
+  abundances,
+  groups = c(),
+  aggregate = "none",
+  taxon.color.map = NULL,
+  group.color.map = NULL,
+  topTaxa = 10,
+  sortGroupwise = TRUE,
+  group.order = c(),
+  hide.taxa = c(),
+  randSampleNum = NA,
+  summedTaxonColor = "#a9a9a9",
+  extendTaxonColorMap = FALSE,
+  legend = TRUE,
+  legend.shift = 1,
+  legend.hidegroups = FALSE,
+  ...
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
 \item{groups}{group membership vector with as many entries as samples}
+
+\item{aggregate}{if groups are given, plot the aggregate across the group (or its selected samples if randSampleNum is true); possible values: none, median and mean}
 
 \item{taxon.color.map}{map of taxon-specific colors, should match row names; taxa not present in the color map will be colored in summedTaxonColor}
 
@@ -21,6 +37,10 @@ groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
 \item{topTaxa}{number of top taxa to be plotted}
 
 \item{sortGroupwise}{if true, samples are sorted according to groups}
+
+\item{group.order}{if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated}
+
+\item{hide.taxa}{do not consider these taxa as top-abundant taxa, but keep them among Others}
 
 \item{randSampleNum}{if larger 0, sortGroupwise is set to true and the indicated sample number is randomly selected for each group}
 
@@ -32,13 +52,18 @@ groupBarplot(abundances, groups = c(), taxon.color.map = NULL,
 
 \item{legend.shift}{increase/decrease this parameter to shift the color legend further to the right/left}
 
+\item{legend.hidegroups}{do not show the group memberships in the legend}
+
 \item{\\dots}{Additional arguments passed to plot()}
 }
 \value{
 if extendTaxonColorMap is true, the taxon color map is returned
 }
 \description{
-Sort taxa by summed abundance across samples and plot sorted taxon composition with a bar per sample
+Sort taxa by summed abundance across all samples and plot sorted taxon composition with a bar per sample
+}
+\details{
+Taxa are always sorted across all samples, also in the presence of a group membership vector.
 }
 \examples{
 data(ibd_taxa)

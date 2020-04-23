@@ -20,8 +20,8 @@
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and all items are numeric; a bipartite network will be computed
 #' @param methods network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"
-#' @param T.up upper threshold for scores (when more than one network construction method is provided, T.up is ignored)
-#' @param T.down lower threshold for scores (when more than one network construction method is provided, T.down is ignored)
+#' @param T.up upper threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.up is ignored)
+#' @param T.down lower threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.down is ignored)
 #' @param method.num.T threshold on method number (only used when more than one method is provided)
 #' @param pval.T threshold on p-value (only used when permut, permutandboot or pval.cor is true); if several methods are provided, only applied after merge
 #' @param init.edge.num the number of top and bottom initial edges (init.edge.num overrides T.up/T.down, set to NA to respect T.up/T.down for a single method)
@@ -45,7 +45,8 @@
 #' ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
 #' min.occ=nrow(ibd_genera)/3
 #' # p-values for the 50 strongest positive and 50 strongest negative Spearman correlations
-#' plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE))
+#' cn=barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE)
+#' plot(cn)
 #' # combine Bray Curtis and Spearman and threshold on method number
 #' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
 #' @export
@@ -63,6 +64,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
   #print(total.edge.num)
   #print(init.edge.num)
   default.init.edge.num=max(2,round(sqrt(N)))
+  default.pseudocount=0.00000000001 # used to convert p-values to significances to avoid loosing zero p-values (cannot be modified by the user)
   taxon.names=c()
   metadata.names=c()
 
@@ -145,6 +147,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
       scores=getScores(abundances,method=method, pseudocount=pseudocount)
       #print(length(as.vector(scores[lower.tri(scores)])))
       # sort score vector representing lower triangle of score matrix in ascending order
+      # note that lower.tri takes values column-wise, not row-wise
       scorevec=sort(as.vector(scores[lower.tri(scores)]),decreasing = FALSE)
       #print(scorevec[1:10])
       # determine lower threshold
@@ -212,7 +215,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
     if(permut==TRUE || permutandboot==TRUE || pval.cor==TRUE){
       # for a single method, multiple-testing correction was carried out previously
       # avoid taking the logarithm of zero p-value, else we loose them
-      res$pvalues[res$pvalues==0]=pseudocount
+      res$pvalues[res$pvalues==0]=default.pseudocount
       pvalue.matrix=res$pvalues
       #print(pvalue.matrix[!is.na(pvalue.matrix)])
       # convert to significances
@@ -254,7 +257,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
        colnames(res$pvalues)=rownames(abundances)
        colnames(res$scores)=rownames(abundances)
        # avoid taking the logarithm of zero p-value, else we loose them
-       res$pvalues[res$pvalues==0]=pseudocount
+       res$pvalues[res$pvalues==0]=default.pseudocount
        logpvalue.matrix=log(res$pvalues)
        # after log, set missing values to 0, so they do not set the entire calculation to NA (method is not counted)
        logpvalue.matrix[is.na(logpvalue.matrix)]=0
@@ -457,7 +460,7 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
   # apply thresholds on scores
   }else{
     if(!is.na(T.up) && !is.na(T.down)){
-        #print("up and down")
+        print("up and down")
         # set all scores above lower threshold and below upper threshold to NA
         scores.temp=scores
         scores.temp[scores.temp>T.up]=Inf
@@ -647,7 +650,7 @@ normalize<-function(x){
 # data("ibd_taxa")
 # data("ibd_lineages")
 # ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
-# getPval(matrix=ibd_genera,x.index=10,y.index=15,method="spearman",permutandboot=T, verbose=T,plot=T)
+# getPval(matrix=ibd_genera,x.index=9,y.index=5,method="spearman",permutandboot=T, verbose=T,plot=T)
 getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, plot=F, verbose=F,  pseudocount=0.00000001) {
   x = as.numeric(matrix[x.index,])
   y = as.numeric(matrix[y.index,])
@@ -712,7 +715,7 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
     }
     boot.sim = na.omit(boot.sim)
     if(plot == TRUE){
-      compareDistribsPure(rand.sim,boot.sim, main="Distributions", name1="Permutations", name2="Bootstraps")
+      compareDistribsPure(rand.sim,boot.sim, main="Permutation and bootstrap distributions", name1="Permutations", name2="Bootstraps", xlab=paste(method,"values",sep=" "))
     }
     # if we got enough non-NA permutation and bootstrap values, compute p-value
     if(length(rand.sim) > round(N.rand/3) && length(boot.sim) > round(N.rand/3)){
@@ -746,7 +749,7 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
       pval = 0.5
     }
   }
-  # set missing value (from constant vector) to intermediate p-value (worst possible p-value in this context)
+  # set missing value (from constant vector) to intermediate non-significant p-value
   if(is.na(pval)){
     pval = 0.5
   }

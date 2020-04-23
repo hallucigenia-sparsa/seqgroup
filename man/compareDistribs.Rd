@@ -4,8 +4,15 @@
 \alias{compareDistribs}
 \title{Compare the distribution of a taxon across two groups}
 \usage{
-compareDistribs(x, taxon, groups = c(), group1 = 1, group2 = 2,
-  name1 = as.character(group1), name2 = as.character(group2))
+compareDistribs(
+  x,
+  taxon,
+  groups = c(),
+  group1 = 1,
+  group2 = 2,
+  name1 = as.character(group1),
+  name2 = as.character(group2)
+)
 }
 \arguments{
 \item{x}{a matrix with taxa as rows and samples as columns}

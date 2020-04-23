@@ -40,6 +40,7 @@
 #' @param sizes a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)
 #' @param size.legend a string displayed as a legend for size
 #' @param time an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)
+#' @param hiddenTaxa an optional vector with names of taxa to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed among top co-varying taxa)
 #' @param hiddenSamples an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)
 #' @param dis dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)
 #' @param rda carry out an RDA instead of a PCoA using vegan's capscale function
@@ -53,7 +54,7 @@
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
 #' @param drawEllipse if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)
-#' @param clusterQualityIndex if groups or groupAttrib given, report cluster quality according to any criterium supported by package clusterCrit (default: Calinski Harabasz, set to none to disable computation of cluster quality)
+#' @param clusterQualityIndex if groups or groupAttrib given, report cluster quality according to silhouette function or any criterium supported by package clusterCrit (default: silhouette, set to none to disable computation of cluster quality)
 #' @param groupDispersion if groups or groupAttrib given, report Tukey's HSD test on differences in group dispersions (avg distance of group members to centroid) and do boxplot (wraps vegan's betadisper)
 #' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
 #' @param ylim range shown on the y axis, by default the minimum and maximum of the second selected component
@@ -78,7 +79,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, clusterQualityIndex="CH", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
 
   # Test
   # path.vdp="/Users/u0097353/Documents/Documents_Karoline/MSysBio_Lab/Results/Nephrology/Data/vdp_genera.txt"
@@ -258,6 +259,15 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     if(!is.null(metadata) && topMetadata>0){
 
       # carry out envfit
+      # Lisa: >> betadisper computes eigenvectors that differ slightly from those in capscale
+      # to be consistent, give the vector slot of the output of eigen to envfit
+      # from betadisper code:
+      # n <- attr(dis, "Size")
+      # x <- matrix(0, ncol = n, nrow = n)
+      # x[row(x) > col(x)] <- dis^2x <- x + t(x)
+      # x <- dblcen(x)
+      # e <- eigen(-x/2, symmetric = TRUE) <<
+      # for the moment ignored, since betadisper/adonis is only used for assessment of cluster variability & quality and not for plotting
       ef=envfit(pcoa.res,metadata,perm=env.permut, choices=dimensions)
       #print(ef$vectors)
       #print(names(ef$vectors$r))
@@ -416,7 +426,10 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       # draw transparent ellipses around samples of the same groups with given confidence
       # by default, color order is not correct, because ordiellipse calls factor on the groups, which sorts entries alphabetically
       # for this reason, factor with correct ordering is reassigned to groups
-      ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",col=unique(colors),alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=0)
+      # color ellipse
+      #ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",col=unique(colors),alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=0)
+      # color border rather than ellipse itself
+      ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(colors))
       # adonis fails for step-wise addition of samples to reference
       adonis_results = adonis(data.frame(t(abundances)) ~ groups.factor, permutations = env.permut, method=dis)
       # variance explained through groups
@@ -434,7 +447,13 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
         clusterQualityIndex="Calinski_Harabasz"
       }
       print(paste("Cluster quality index", clusterQualityIndex))
-      print(intCriteria(t(abundances), part=groupsToNumeric(groups), crit=clusterQualityIndex)[[1]])
+      #print(is.numeric(abundances))
+      if(clusterQualityIndex=="silhouette"){
+        print(silhouette(abundances,groups=groups,method=dis))
+      }else{
+        # note that clusterCrit gives an error for large input matrices, but not for small ones; this error is not yet fixed
+        print(intCriteria(t(abundances), part=groupsToNumeric(groups), crit=clusterQualityIndex)[[1]])
+      }
     }
   }
 
@@ -503,6 +522,16 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
         for(sig.taxon.name in rownames(U.selected)){
           print(sig.taxon.name)
         }
+      }
+      if(length(hiddenTaxa)>0){
+        visibleTaxa.indices=c()
+        # loop selected taxa
+        for(U.taxon.index in 1:nrow(U.selected)){
+          if(!(rownames(U.selected)[U.taxon.index] %in% hiddenTaxa)){
+            visibleTaxa.indices=c(visibleTaxa.indices,U.taxon.index)
+          } # check whether selected taxon should be hidden
+        }
+        U.selected = U.selected[visibleTaxa.indices,]
       }
       arrows(0, 0, U.selected[, 1] * arrowFactor, U.selected[, 2] * arrowFactor, col = taxonColor,length = 0.1, lty=2)
 

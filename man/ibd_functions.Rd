@@ -4,7 +4,9 @@
 \name{ibd_functions}
 \alias{ibd_functions}
 \title{Functions from the PRISM cohort}
-\format{An object of class \code{data.frame} with 2113 rows and 155 columns.}
+\format{
+An object of class \code{data.frame} with 2113 rows and 155 columns.
+}
 \usage{
 data(ibd_functions)
 }

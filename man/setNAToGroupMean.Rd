@@ -4,8 +4,12 @@
 \alias{setNAToGroupMean}
 \title{Replace missing values by group mean.}
 \usage{
-setNAToGroupMean(metadata.df, groups = c(), na.threshold = 4,
-  metadata.to.skip = c())
+setNAToGroupMean(
+  metadata.df,
+  groups = c(),
+  na.threshold = 4,
+  metadata.to.skip = c()
+)
 }
 \arguments{
 \item{metadata.df}{a data frame with metadata}

@@ -4,8 +4,14 @@
 \alias{findClusters}
 \title{Cluster taxon- or sample-wise}
 \usage{
-findClusters(abundances, method = "dmm", k = 3, minK = 2,
-  maxK = 10, qualityIndex = "CH")
+findClusters(
+  abundances,
+  method = "dmm",
+  k = 3,
+  minK = 2,
+  maxK = 10,
+  qualityIndex = "silhouette"
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -18,7 +24,7 @@ findClusters(abundances, method = "dmm", k = 3, minK = 2,
 
 \item{maxK}{the maximum cluster number to test}
 
-\item{qualityIndex}{CH (Calinski_Harabasz), Dunn, Silhouette and other quality indices supported by clusterCrit's intCriteria function}
+\item{qualityIndex}{by default silhouette computed with silhouette function on bray curtis, can also be CH, Dunn, and other quality indices supported by clusterCrit's intCriteria function or none}
 }
 \value{
 a cluster membership vector
@@ -34,11 +40,11 @@ they will be scaled (divided by a constant and rounded). In addition, for DMM, t
 of counts should be the same across samples.
 Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
 The cluster number can be omitted, in which case the best cluster number is determined in the range
-provided using a cluster quality index implemented in clusterCrit's function intCriteria.
+provided using either silhouette or a cluster quality index implemented in clusterCrit's function intCriteria.
 }
 \examples{
 data("ibd_taxa")
 # unequal sample sums in the example data set are due to the removal of low-prevalence taxa
-clusters=findClusters(ibd_taxa,k=NA,maxK=6)
+clusters=findClusters(ibd_taxa, k=NA, method="pam", qualityIndex="CH")
 table(clusters)
 }

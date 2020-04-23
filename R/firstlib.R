@@ -15,6 +15,7 @@
 #' @importFrom stats na.omit
 #' @importFrom stats median
 #' @importFrom stats sd
+#' @importFrom stats quantile
 #' @importFrom stats rnorm
 #' @importFrom stats cor
 #' @importFrom stats pnorm

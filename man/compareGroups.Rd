@@ -4,10 +4,20 @@
 \alias{compareGroups}
 \title{Compare diversity-related properties across groups}
 \usage{
-compareGroups(abundances, property = "beta", method = "dissim",
-  groups = c(), plot.type = "pergroup", avg = "none", all = FALSE,
-  noSameGroup = TRUE, rowNorm = FALSE, subsample = TRUE, xlab = "",
-  pvalViz = FALSE)
+compareGroups(
+  abundances,
+  property = "beta",
+  method = "dissim",
+  groups = c(),
+  plot.type = "pergroup",
+  avg = "none",
+  all = FALSE,
+  noSameGroup = TRUE,
+  rowNorm = FALSE,
+  subsample = TRUE,
+  xlab = "",
+  pvalViz = FALSE
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}

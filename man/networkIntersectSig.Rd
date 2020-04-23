@@ -4,9 +4,16 @@
 \alias{networkIntersectSig}
 \title{Significance of network intersection}
 \usage{
-networkIntersectSig(rep.num = 5, taxon.num = 20,
-  avg.network.size = 0, inter.size = 0, iter = 1000,
-  directed = FALSE, loops = FALSE, hist.rand = FALSE)
+networkIntersectSig(
+  rep.num = 5,
+  taxon.num = 20,
+  avg.network.size = 0,
+  inter.size = 0,
+  iter = 1000,
+  directed = FALSE,
+  loops = FALSE,
+  hist.rand = FALSE
+)
 }
 \arguments{
 \item{rep.num}{number of inferred networks}

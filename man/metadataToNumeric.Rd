@@ -4,10 +4,18 @@
 \alias{metadataToNumeric}
 \title{Convert metadata into numeric form}
 \usage{
-metadataToNumeric(metadata, yes = "Y", no = "N", na.threshold = 100,
-  to.skip = c(), binarize = TRUE, date.items = c(),
-  format = "\%d/\%m/\%y", referenceDate = "1/1/1900",
-  remove.neg = TRUE)
+metadataToNumeric(
+  metadata,
+  yes = "Y",
+  no = "N",
+  na.threshold = 100,
+  to.skip = c(),
+  binarize = TRUE,
+  date.items = c(),
+  format = "\%d/\%m/\%y",
+  referenceDate = "1/1/1900",
+  remove.neg = TRUE
+)
 }
 \arguments{
 \item{metadata}{a dataframe}

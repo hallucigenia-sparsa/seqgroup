@@ -1,16 +1,21 @@
 #' @title Bar plot of taxon composition with group support
-#' @description Sort taxa by summed abundance across samples and plot sorted taxon composition with a bar per sample
+#' @description Sort taxa by summed abundance across all samples and plot sorted taxon composition with a bar per sample
+#' @details Taxa are always sorted across all samples, also in the presence of a group membership vector.
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param groups group membership vector with as many entries as samples
+#' @param aggregate if groups are given, plot the aggregate across the group (or its selected samples if randSampleNum is true); possible values: none, median and mean
 #' @param taxon.color.map map of taxon-specific colors, should match row names; taxa not present in the color map will be colored in summedTaxonColor
 #' @param group.color.map map of group-specific colors, should match group names
 #' @param topTaxa number of top taxa to be plotted
 #' @param sortGroupwise if true, samples are sorted according to groups
+#' @param group.order if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated
+#' @param hide.taxa do not consider these taxa as top-abundant taxa, but keep them among Others
 #' @param randSampleNum if larger 0, sortGroupwise is set to true and the indicated sample number is randomly selected for each group
 #' @param summedTaxonColor the color of the summed taxa, by default gray
 #' @param extendTaxonColorMap if true, taxa not in the taxon color map are added there and the extended color map is returned
 #' @param legend add a legend with the color code
 #' @param legend.shift increase/decrease this parameter to shift the color legend further to the right/left
+#' @param legend.hidegroups do not show the group memberships in the legend
 #' @param \\dots Additional arguments passed to plot()
 #' @return if extendTaxonColorMap is true, the taxon color map is returned
 #' @examples
@@ -22,12 +27,16 @@
 #' ibd_genera=aggregateTaxa(ibd_taxa,ibd_lineages,taxon.level = "genus")
 #' groupBarplot(ibd_genera,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
 #' @export
-groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, ...){
+groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, group.order=c(), hide.taxa=c(), randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, legend.hidegroups=FALSE, ...){
 
   if(length(groups)>0){
     if(length(groups)!=ncol(abundances)){
       stop("Each sample should have a group assigned.")
     }
+  }
+
+  if(aggregate != "none" && length(groups)==0){
+    stop("For aggregation across groups, a group membership vector is needed.")
   }
 
   # if no groups are assigned, put all samples into the same default group
@@ -51,6 +60,10 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
     randSampleNum=0
   }
 
+  if(aggregate != "none"){
+    sortGroupwise=TRUE
+  }
+
   groupNum=length(unique(groups))
   prev.mar=par()$mar
   mar.scale=0.5 # maximal number of characters is scaled by this number to compute mar on the right side
@@ -59,10 +72,13 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   taxon.colors=c()
   group.colors=c()
 
+  group.indices.map=list()
+  aggregated=matrix(NA,nrow=nrow(abundances),ncol=length(unique(groups)))
+  rownames(aggregated)=rownames(abundances)
+  counter=1
+
   # sort samples according to group membership
-  # TODO: only collecting indices is sufficient, no need to use cbind
   if(sortGroupwise && (groupNum>1 || randSampleNum>0)){
-    counter=1
     abundancesSorted=NULL
     updated.groups=c()
     # loop groups
@@ -70,30 +86,73 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
       group.member.indices=which(groups==group)
       print(paste("Number of samples in group",group,":",length(group.member.indices)))
       if(randSampleNum>0){
+        #print("Selecting random samples")
         if(length(group.member.indices)>randSampleNum){
           group.member.indices=sample(group.member.indices)[1:randSampleNum]
         }
       }
-      xgroup=as.matrix(abundances[,group.member.indices])
-      if(length(group.member.indices)==1){
-        colnames(xgroup)=colnames(abundances)[group.member.indices]
+      group.indices.map[[group]]=group.member.indices
+      if(aggregate == "median"){
+        group.indices.map[[group]]=counter
+        aggregated[,counter]=apply(abundances[,group.member.indices],1,median) # compute median row-wise
+      }else if(aggregate == "mean"){
+        group.indices.map[[group]]=counter
+        aggregated[,counter]=apply(abundances[,group.member.indices],1,mean) # compute mean row-wise
       }
-      #print(colnames(xgroup))
-      updated.groups=c(updated.groups,rep(group,length(group.member.indices)))
-      if(counter>1){
-        abundancesSorted=cbind(abundancesSorted,xgroup)
+      counter = counter +1
+    } # end loop groups
+    indices=c()
+    # for a single group or no group, order is irrelevant
+    if(length(group.order)>1){
+      for(group in group.order){
+        indices=c(indices,group.indices.map[[group]])
+      }
+    }else{
+      indices=unlist(group.indices.map)
+    }
+    if(aggregate == "none"){
+      abundances=abundances[,indices]
+      groups=groups[indices]
+    }else{
+      #print(indices)
+      abundances=aggregated[,indices]
+      if(length(group.order)>0){
+        groups=group.order
       }else{
-        abundancesSorted=xgroup
+        groups=unique(groups)
       }
-      counter=1+counter
-    } # end groups loop
-    abundances=abundancesSorted
-    groups=updated.groups
-    #print(dim(abundances))
-    #print(groups)
+      colnames(abundances)=groups
+    } # aggregate is not none
+  } # sort group-wise
+
+  #print(colSums(abundances))
+
+  hidden.taxa=NULL
+  if(length(hide.taxa)>0){
+    indices.hidden=c()
+    for(hidden.taxon in hide.taxa){
+      indices.hidden=c(indices.hidden,which(rownames(abundances)==hidden.taxon))
+    }
+    hidden.taxa=as.matrix(abundances[indices.hidden,])
+    if(length(indices.hidden)==1){
+      hidden.taxa = t(hidden.taxa)
+    }
+    keep.indices=setdiff(c(1:nrow(abundances)),indices.hidden)
+    abundances=abundances[keep.indices,]
   }
 
   sorted=sortTaxa(abundances,topTaxa=topTaxa)
+  if(length(hide.taxa)>0){
+    other.index=which(rownames(sorted)=="Others")
+    if(length(other.index)>0){
+      #print(dim(hidden.taxa))
+      hidden.sum=colSums(hidden.taxa)
+      sorted[other.index,]=sorted[other.index,]+hidden.sum
+    }else{
+      warning("Could not add hidden taxa to other taxa!")
+    }
+  }
+
   color.res=getColorVectorGivenTaxaAndColorMap(rownames(sorted),taxon.color.map = taxon.color.map, summedTaxonColor = summedTaxonColor, extendColorMap = extendTaxonColorMap)
   taxon.color.map=color.res$colormap
   taxon.colors=color.res$colors
@@ -110,7 +169,7 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   #print(paste("Maximal character number",maxchars))
   updated.mar[4]=maxchars*mar.scale
   par(mar=updated.mar,srt=90, las=2)
-  # par(las=2, srt=90, mar = c(5, 5, 4, 4))
+  #print(updated.mar)
 
   if(groupNum>1){
     group.colors=assignColorsToGroups(groups,myColors = group.color.map)
@@ -123,22 +182,26 @@ groupBarplot<- function(abundances, groups=c(), taxon.color.map=NULL, group.colo
   # note that ylim removes the margin definition, so is omitted
   # check presence of ylab and add a default if absent
   if(!("ylab" %in% names(match.call(expand.dots=TRUE)))){
-    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',ylab="Abundance",cex.names=0.8, ...)
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',ylab="Abundance",cex.names=0.8, cex.axis=0.8, ...)
   }else{
-    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',cex.names=0.8, ...)
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',cex.names=0.8, cex.axis=0.8, ...)
   }
   #print(colnames(sorted))
   mtext(colnames(sorted),col=group.colors,side=1, cex=0.8, line=0.5, at=midpoints)
-  par(las=1,srt=0)
+  prev.xpd=par()$xpd
+  par(las=1,srt=0,mar=updated.mar, xpd=NA)
 
   # add the legend
   if(legend==TRUE){
-    legend(updated.mar[4]*(legend.shift/mar.scale),1,legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors,xpd=TRUE)
-    if(groupNum>1){
-      legend(updated.mar[4]*(legend.shift/mar.scale),0,legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors),xpd=TRUE)
+    legend(x="topleft",inset=c(legend.shift,0),legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)
+    #legend(updated.mar[4]*(legend.shift/mar.scale),1,legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors,xpd=TRUE)
+    if(groupNum>1 && legend.hidegroups==FALSE){
+      legend(x="bottomleft",inset=c(legend.shift,0),legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors))
+      #legend(updated.mar[4]*(legend.shift/mar.scale),0,legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors),xpd=TRUE)
     }
   }
-  par(mar=prev.mar)
+  # restore par to default values
+  par(mar=prev.mar, xpd=prev.xpd)
 
   if(extendTaxonColorMap){
     return(taxon.color.map)

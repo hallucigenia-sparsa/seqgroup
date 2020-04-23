@@ -10,24 +10,24 @@
 #' of counts should be the same across samples.
 #' Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
 #' The cluster number can be omitted, in which case the best cluster number is determined in the range
-#' provided using a cluster quality index implemented in clusterCrit's function intCriteria.
+#' provided using either silhouette or a cluster quality index implemented in clusterCrit's function intCriteria.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param method clustering method, supported are dmm and pam
 #' @param k cluster number, can be set to NA if cluster number is to be determined with a quality index
 #' @param minK the minimum cluster number to test
 #' @param maxK the maximum cluster number to test
-#' @param qualityIndex CH (Calinski_Harabasz), Dunn, Silhouette and other quality indices supported by clusterCrit's intCriteria function
+#' @param qualityIndex by default silhouette computed with silhouette function on bray curtis, can also be CH, Dunn, and other quality indices supported by clusterCrit's intCriteria function or none
 #' @return a cluster membership vector
 #' @examples
 #' data("ibd_taxa")
 #' # unequal sample sums in the example data set are due to the removal of low-prevalence taxa
-#' clusters=findClusters(ibd_taxa,k=NA,maxK=6)
+#' clusters=findClusters(ibd_taxa, k=NA, method="pam", qualityIndex="CH")
 #' table(clusters)
 #' @export
 #'
 
-findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIndex="CH"){
+findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIndex="silhouette"){
   # DMM needs not too large counts and doesn't work when taxa are zero everywhere.
   if(method=="dmm"){
     taxonSums=rowSums(abundances)
@@ -59,6 +59,10 @@ findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIn
     }
   }
 
+  if(is.na(k) && (qualityIndex=="none" || qualityIndex=="")){
+    stop("When k is not given, a cluster quality index has to be provided.")
+  }
+
   if(qualityIndex=="CH"){
     qualityIndex="Calinski_Harabasz"
   }
@@ -66,9 +70,21 @@ findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIn
   # k provided
   if(!is.na(k) && !is.null(k)){
     groups=findClustersGivenK(abundances, method=method,k=k)
-    print(paste("Cluster quality according to",qualityIndex,":",intCriteria(t(abundances),groups,c(qualityIndex))))
+    if(qualityIndex!="none"){
+      clusterQuality=NA
+      if(qualityIndex=="silhouette"){
+        clusterQuality=silhouette(abundances,groups=groups,method="bray")
+      }else{
+        # note that clusterCrit gives an error for large input matrices, but not for small ones; this error is not yet fixed
+        clusterQuality=intCriteria(t(abundances),groups,c(qualityIndex))
+      }
+      print(paste("Cluster quality according to",qualityIndex,":",clusterQuality))
+    }
     return(groups)
   }else{
+    if(qualityIndex=="none"){
+      stop("Please provide a quality index.")
+    }
     # store group memberships
     kToTest=c(minK : maxK)
     groupMatrix=matrix(nrow=length(kToTest),ncol=ncol(abundances))
@@ -76,11 +92,27 @@ findClusters<-function(abundances, method="dmm", k=3, minK=2, maxK=10, qualityIn
     rowCounter=1
     for(k in kToTest){
       groupMatrix[rowCounter,]=findClustersGivenK(abundances, method=method,k=k)
-      qualityValues=c(qualityValues,intCriteria(t(abundances),groupMatrix[rowCounter,],c(qualityIndex)))
+      qualityValue=NA
+      if(qualityIndex=="silhouette"){
+        qualityValue=silhouette(abundances,groups=groupMatrix[rowCounter,],method="bray")
+      }else{
+        qualityValue=intCriteria(t(abundances),groupMatrix[rowCounter,],c(qualityIndex))
+      }
+      print(paste("k equal",k,"has quality value",qualityValue))
+      qualityValues=c(qualityValues,qualityValue)
       rowCounter=rowCounter+1
     }
     #print(qualityValues)
-    index.best=bestCriterion(unlist(qualityValues), crit=qualityIndex)
+    unlisted=unlist(qualityValues)
+    na.indices=which(is.na(unlisted))
+    # deal with missing values
+    if(length(na.indices)>0){
+      non.na=setdiff(c(1:length(unlisted)),na.indices)
+      unlisted=unlisted[non.na]
+      kToTest=kToTest[non.na]
+    }
+    index.best=bestCriterion(unlisted, crit=qualityIndex) # also works for silhouette since the name is the same
+    #print(index.best)
     print(paste("The optimal cluster number according to",qualityIndex,"is",kToTest[index.best],"with value",qualityValues[index.best]))
     return(as.vector(groupMatrix[index.best,]))
   }

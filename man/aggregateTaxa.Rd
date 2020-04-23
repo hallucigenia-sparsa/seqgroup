@@ -4,8 +4,13 @@
 \alias{aggregateTaxa}
 \title{Aggregate a taxon abundance matrix}
 \usage{
-aggregateTaxa(x, lineages, taxon.level = "class", unknown = c(NA,
-  "unclassified"), keepSumUnknown = FALSE)
+aggregateTaxa(
+  x,
+  lineages,
+  taxon.level = "class",
+  unknown = c(NA, "unclassified"),
+  keepSumUnknown = FALSE
+)
 }
 \arguments{
 \item{x}{an abundance matrix with taxa as rows and samples as columns}

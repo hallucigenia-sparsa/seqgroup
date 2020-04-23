@@ -4,13 +4,29 @@
 \alias{barebonesCoNet}
 \title{Barebones R implementation of CoNet}
 \usage{
-barebonesCoNet(abundances, metadata = NULL, methods = c("spearman",
-  "kld"), T.up = NA, T.down = NA, method.num.T = 2, pval.T = 0.05,
-  init.edge.num = max(2, round(sqrt(nrow(abundances)))), min.occ = 0,
-  keep.filtered = TRUE, norm = FALSE, stand.rows = FALSE,
-  pval.cor = FALSE, permut = FALSE, renorm = FALSE,
-  permutandboot = FALSE, iters = 100, bh = TRUE,
-  pseudocount = 1e-11, plot = FALSE, verbose = FALSE)
+barebonesCoNet(
+  abundances,
+  metadata = NULL,
+  methods = c("spearman", "kld"),
+  T.up = NA,
+  T.down = NA,
+  method.num.T = 2,
+  pval.T = 0.05,
+  init.edge.num = max(2, round(sqrt(nrow(abundances)))),
+  min.occ = 0,
+  keep.filtered = TRUE,
+  norm = FALSE,
+  stand.rows = FALSE,
+  pval.cor = FALSE,
+  permut = FALSE,
+  renorm = FALSE,
+  permutandboot = FALSE,
+  iters = 100,
+  bh = TRUE,
+  pseudocount = 1e-11,
+  plot = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
@@ -19,13 +35,13 @@ barebonesCoNet(abundances, metadata = NULL, methods = c("spearman",
 
 \item{methods}{network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"}
 
-\item{T.up}{upper threshold for scores (when more than one network construction method is provided, T.up is ignored)}
+\item{T.up}{upper threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.up is ignored)}
 
-\item{T.down}{lower threshold for scores (when more than one network construction method is provided, T.down is ignored)}
+\item{T.down}{lower threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.down is ignored)}
 
 \item{method.num.T}{threshold on method number (only used when more than one method is provided)}
 
-\item{pval.T}{threshold on p-value (only used when permut is true); if several methods are provided, only applied after merge}
+\item{pval.T}{threshold on p-value (only used when permut, permutandboot or pval.cor is true); if several methods are provided, only applied after merge}
 
 \item{init.edge.num}{the number of top and bottom initial edges (init.edge.num overrides T.up/T.down, set to NA to respect T.up/T.down for a single method)}
 
@@ -37,26 +53,26 @@ barebonesCoNet(abundances, metadata = NULL, methods = c("spearman",
 
 \item{stand.rows}{standardize rows by dividing each entry by its corresponding row sum, applied after normalization}
 
-\item{pval.cor}{compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and/or permutandboot with or without renorm)}
+\item{pval.cor}{compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and permutandboot with or without renorm)}
 
 \item{permut}{compute p-values on edges with a permutation test}
 
-\item{renorm}{compute p-values with a permutation test, using renormalization (only applied to correlations)}
+\item{renorm}{use renormalization when computing permutation distribution (only applied to correlations; cannot be combined with metadata)}
 
 \item{permutandboot}{compute p-values from both permutation (with or without renorm) and bootstrap distribution}
 
-\item{iters}{number of iterations for the permutation test}
+\item{iters}{number of iterations for the permutation and bootstrap distributions}
 
 \item{bh}{multiple-test-correct using Benjamini-Hochberg; if several methods are provided bh is applied to merged p-value}
 
 \item{pseudocount}{count added to zeros prior to taking logarithm (for KLD, p-value merge and significance)}
 
-\item{plot}{plot score or, if permut or pval.cor is true, p-value distribution}
+\item{plot}{plot score or, if permut, permutandboot or pval.cor is true, p-value distribution, in both cases after thresholding}
 
-\item{verbose}{print the number of positive and negative edges and, if permut is true, details of p-value computation}
+\item{verbose}{print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation}
 }
 \value{
-igraph object with absolute association strengths, number of supporting methods or, if permut or pval.cor is true, significances (-1*log10(pval)) as edge weights
+igraph object with absolute association strengths, number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
 }
 \description{
 Build a network using Pearson, Spearman, Kullback-Leibler and/or Bray-Curtis.
@@ -83,7 +99,8 @@ data("ibd_lineages")
 ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
 min.occ=nrow(ibd_genera)/3
 # p-values for the 50 strongest positive and 50 strongest negative Spearman correlations
-plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,pval.cor=TRUE))
-# combine Bray Curtis and Spearman without computing p-values
+cn=barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE)
+plot(cn)
+# combine Bray Curtis and Spearman and threshold on method number
 plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
 }

@@ -4,8 +4,13 @@
 \alias{transitionProbabs}
 \title{Compute transition probabilities between clusters}
 \usage{
-transitionProbabs(clus.vec = c(), groups = c(), metadata.vec = c(),
-  windowSize = 4, freq = FALSE)
+transitionProbabs(
+  clus.vec = c(),
+  groups = c(),
+  metadata.vec = c(),
+  windowSize = 4,
+  freq = FALSE
+)
 }
 \arguments{
 \item{clus.vec}{the vector with cluster memberships}

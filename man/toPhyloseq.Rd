@@ -4,9 +4,15 @@
 \alias{toPhyloseq}
 \title{Convert abundances to phyloseq object}
 \usage{
-toPhyloseq(abundances, metadata = NULL, lineages = NULL,
-  assignSampleNames = FALSE, dummyMetadata = FALSE,
-  dummyLineages = FALSE, lineageSource = NULL)
+toPhyloseq(
+  abundances,
+  metadata = NULL,
+  lineages = NULL,
+  assignSampleNames = FALSE,
+  dummyMetadata = FALSE,
+  dummyLineages = FALSE,
+  lineageSource = NULL
+)
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
