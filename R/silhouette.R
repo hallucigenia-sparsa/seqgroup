@@ -28,6 +28,20 @@ silhouette <- function(abundances, groups, method='bray'){
       ids <- which(groups == clus)
       if (clus == cluster){
         ids <- ids[ids != i]  # distance to self should not be included
+        # Manual merge of treatment of zero-member clusters with alternative
+        # <<<<<<< HEAD
+        #        if(length(ids)==0){
+        #          warning(paste("Cluster",cluster," of",length(unique(groups)),"clusters is empty! Silhouette is set to NA"))
+        #          empty=TRUE
+        #        }else{
+        #          #print(paste("ids=",ids))
+        #          intra_cluster_distance <- mean(row[ids])
+        #        }
+        #        # fix: replaced meandist below by intra_cluster_distance
+        #      } else if (intra_cluster_distance < smallest_cluster_distance){
+        #        smallest_cluster_distance <- mean(row[ids])
+        # =======
+        # only done if there are members in the cluster: intra_cluster_distance <- mean(row[ids])
         if(length(ids)==0){
           warning(paste("Cluster",cluster," of",length(unique(groups)),"clusters is empty! Silhouette is set to NA"))
           empty=TRUE
@@ -35,9 +49,12 @@ silhouette <- function(abundances, groups, method='bray'){
           #print(paste("ids=",ids))
           intra_cluster_distance <- mean(row[ids])
         }
-        # fix: replaced meandist below by intra_cluster_distance
-      } else if (intra_cluster_distance < smallest_cluster_distance){
-        smallest_cluster_distance <- mean(row[ids])
+      } else {
+        inter_cluster_distance <- mean(row[ids])
+        if (inter_cluster_distance < smallest_cluster_distance){
+          smallest_cluster_distance <- inter_cluster_distance
+        }
+# >>>>>>> 0d6c5931d0584caae022c3a1319236ef0c91ed4c
       }
     } # loop clusters
     if (intra_cluster_distance < smallest_cluster_distance){
