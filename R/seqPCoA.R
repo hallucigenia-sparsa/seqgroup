@@ -54,6 +54,8 @@
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
 #' @param drawEllipse if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)
+#' @param ellipseOnClusters draw ellipse around cluster members (indicated by shape) instead of group members (indicated by color)
+#' @param ellipseColorMap color ellipses according to this color list; entries have to be group names or, if ellipseOnClusters is true, cluster names; overrides groupColors for ellipses
 #' @param clusterQualityIndex if groups or groupAttrib given, report cluster quality according to silhouette function or any criterium supported by package clusterCrit (default: silhouette, set to none to disable computation of cluster quality)
 #' @param groupDispersion if groups or groupAttrib given, report Tukey's HSD test on differences in group dispersions (avg distance of group members to centroid) and do boxplot (wraps vegan's betadisper)
 #' @param xlim range shown on the x axis, by default the minimum and maximum of the first selected component
@@ -79,7 +81,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, ellipseOnClusters=FALSE, ellipseColorMap=NULL, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
 
   # Test
   # path.vdp="/Users/u0097353/Documents/Documents_Karoline/MSysBio_Lab/Results/Nephrology/Data/vdp_genera.txt"
@@ -143,6 +145,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
   }
 
   lastIndexRef=0
+  cluster.colors=c()
 
   if(!is.null(reference)){
     lastIndexRef=ncol(reference)
@@ -429,7 +432,17 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       # color ellipse
       #ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",col=unique(colors),alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=0)
       # color border rather than ellipse itself
-      ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(colors))
+      if(ellipseOnClusters && length(clusters)>0){
+        cluster.factor=factor(clusters,levels=unique(clusters))
+        if(!is.null(ellipseColorMap)){
+          cluster.colors=assignColorsToGroups(clusters, refName = refName, myColors = ellipseColorMap)
+        }else{
+          cluster.colors=assignColorsToGroups(clusters, refName = refName)
+        }
+        ordiellipse(pcoa.res,scaling=0,groups=cluster.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(cluster.colors))
+      }else{
+        ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(colors))
+      }
       # adonis fails for step-wise addition of samples to reference
       adonis_results = adonis(data.frame(t(abundances)) ~ groups.factor, permutations = env.permut, method=dis)
       # variance explained through groups
@@ -604,10 +617,14 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
 
   if(length(groups)>0){
     # cex=0.9
-    legend("topright",legend=unique(groups[selected.sample.indices]),cex=0.6, pch = rep("*",length(unique(groups[selected.sample.indices]))), col = unique(colors[selected.sample.indices]), bg = "white", text.col="black")
+    legend("topright",legend=unique(groups[selected.sample.indices]),cex=0.9, pch = rep("*",length(unique(groups[selected.sample.indices]))), col = unique(colors[selected.sample.indices]), bg = "white", text.col="black")
   }
   if(length(clusters)>0){
-    legend("topleft",legend=unique(clusters[selected.sample.indices]),cex=0.9, pch = unique(pch.value), col = "black", bg = "white", text.col="black")
+    if(ellipseOnClusters){
+      legend("topleft",legend=unique(clusters[selected.sample.indices]),cex=0.9, pch = unique(pch.value), col = "black", bg = "white", text.col=unique(cluster.colors))
+    }else{
+      legend("topleft",legend=unique(clusters[selected.sample.indices]),cex=0.9, pch = unique(pch.value), col = "black", bg = "white", text.col="black")
+    }
   }
   # 1 = default size
   if(display.size.legend==TRUE){

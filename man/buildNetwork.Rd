@@ -7,6 +7,9 @@
 buildNetwork(
   abundances,
   lineages = NULL,
+  min.occ = 0,
+  norm = FALSE,
+  clr = FALSE,
   method = "mb",
   repNum = 20,
   minStrength = 0.5,
@@ -26,6 +29,12 @@ buildNetwork(
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
 \item{lineages}{a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)}
+
+\item{min.occ}{only keep rows with at least the given number of non-zero values, keep the sum of the other rows (carried out before network construction)}
+
+\item{norm}{normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI}
+
+\item{clr}{apply CLR transform (after filtering and normalization; \code{\link{clr}} with omit.zeros true); not carried out for SPIEC-EASI}
 
 \item{method}{mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
 

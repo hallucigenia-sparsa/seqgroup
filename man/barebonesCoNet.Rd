@@ -13,12 +13,14 @@ barebonesCoNet(
   method.num.T = 2,
   pval.T = 0.05,
   init.edge.num = max(2, round(sqrt(nrow(abundances)))),
-  min.occ = 0,
+  min.occ = round(ncol(abundances)/3),
   keep.filtered = TRUE,
   norm = FALSE,
   stand.rows = FALSE,
+  clr = FALSE,
   pval.cor = FALSE,
   permut = FALSE,
+  columnwise = FALSE,
   renorm = FALSE,
   permutandboot = FALSE,
   iters = 100,
@@ -33,7 +35,7 @@ barebonesCoNet(
 
 \item{metadata}{an optional data frame with metadata items as columns, where samples are in the same order as in abundances and all items are numeric; a bipartite network will be computed}
 
-\item{methods}{network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"}
+\item{methods}{network construction methods, values can be combinations of: "pearson", "spearman", "kld", "euclid" or "bray"; note that the latter two are not defined for negative abundance values}
 
 \item{T.up}{upper threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.up is ignored)}
 
@@ -53,9 +55,13 @@ barebonesCoNet(
 
 \item{stand.rows}{standardize rows by dividing each entry by its corresponding row sum, applied after normalization}
 
+\item{clr}{apply CLR transform (after filtering and normalization); if true, stand.rows is ignored and keep.filtered is set to true; pseudocount is ignored for clr (\code{\link{clr}} with omit.zeros true)}
+
 \item{pval.cor}{compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and permutandboot with or without renorm)}
 
-\item{permut}{compute p-values on edges with a permutation test}
+\item{permut}{compute edge-specific p-values with a permutation test}
+
+\item{columnwise}{permute columns instead of rows for the permutation test}
 
 \item{renorm}{use renormalization when computing permutation distribution (only applied to correlations; cannot be combined with metadata)}
 
@@ -72,10 +78,10 @@ barebonesCoNet(
 \item{verbose}{print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation}
 }
 \value{
-igraph object with absolute association strengths, number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
+igraph object with edge weights being either the absolute difference from the mean association strength, the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
 }
 \description{
-Build a network using Pearson, Spearman, Kullback-Leibler and/or Bray-Curtis.
+Build a network using Pearson, Spearman, Euclidean, Kullback-Leibler and/or Bray-Curtis.
 The original CoNet implementation with extended functionality is available at: \href{http://psbweb05.psb.ugent.be/conet/}{http://systemsbiology.vub.ac.be/conet}.
 For export of data to the original CoNet, see \code{\link{exportToCoNet}}, for a generic network building function wrapping
 barebonesCoNet and other network inference methods, see \code{\link{buildNetwork}}.
@@ -92,15 +98,18 @@ Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exc
 (lack of agreement between methods) in gray.
 When metadata are provided, a bipartite network is computed. To circumvent bipartite network computation, metadata can be appended to abundances to form a single
 input matrix, but in this case, preprocessing on abundance data needs to be carried out before.
+When CLR transform is applied, the Euclidean distance is the recommended measure, which according to Gloor et al. (\url{https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full})
+is equivalent to the Aitchison distance after CLR.
 }
 \examples{
 data("ibd_taxa")
 data("ibd_lineages")
 ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
-min.occ=nrow(ibd_genera)/3
-# p-values for the 50 strongest positive and 50 strongest negative Spearman correlations
-cn=barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE)
-plot(cn)
-# combine Bray Curtis and Spearman and threshold on method number
-plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
+# only keep significant ones among the top 50 positive and negative Spearman correlations
+plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,permutandboot=TRUE))
+# only keep edges supported by both Bray Curtis and Spearman
+plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50))
+# keep significant Euclidean distance on CLR-transformed data (samples are completed to sum to one)
+g=rbind(ibd_genera,rep(1,ncol(ibd_genera))-colSums(ibd_genera))
+plot(barebonesCoNet(g,clr=TRUE,methods="euclid",init.edge.num=50,permut=TRUE,columnwise=TRUE))
 }

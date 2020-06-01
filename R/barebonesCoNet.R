@@ -1,6 +1,6 @@
 #' @title Barebones R implementation of CoNet
 #'
-#' @description Build a network using Pearson, Spearman, Kullback-Leibler and/or Bray-Curtis.
+#' @description Build a network using Pearson, Spearman, Euclidean, Kullback-Leibler and/or Bray-Curtis.
 #' The original CoNet implementation with extended functionality is available at: \href{http://psbweb05.psb.ugent.be/conet/}{http://systemsbiology.vub.ac.be/conet}.
 #' For export of data to the original CoNet, see \code{\link{exportToCoNet}}, for a generic network building function wrapping
 #' barebonesCoNet and other network inference methods, see \code{\link{buildNetwork}}.
@@ -16,10 +16,12 @@
 #' (lack of agreement between methods) in gray.
 #' When metadata are provided, a bipartite network is computed. To circumvent bipartite network computation, metadata can be appended to abundances to form a single
 #' input matrix, but in this case, preprocessing on abundance data needs to be carried out before.
+#' When CLR transform is applied, the Euclidean distance is the recommended measure, which according to Gloor et al. (\url{https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full})
+#' is equivalent to the Aitchison distance after CLR.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and all items are numeric; a bipartite network will be computed
-#' @param methods network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"
+#' @param methods network construction methods, values can be combinations of: "pearson", "spearman", "kld", "euclid" or "bray"; note that the latter two are not defined for negative abundance values
 #' @param T.up upper threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.up is ignored)
 #' @param T.down lower threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.down is ignored)
 #' @param method.num.T threshold on method number (only used when more than one method is provided)
@@ -29,8 +31,10 @@
 #' @param keep.filtered sum all filtered rows and add the sum vector as additional row
 #' @param norm normalize matrix (carrried out after filtering)
 #' @param stand.rows standardize rows by dividing each entry by its corresponding row sum, applied after normalization
+#' @param clr apply CLR transform (after filtering and normalization); if true, stand.rows is ignored and keep.filtered is set to true; pseudocount is ignored for clr (\code{\link{clr}} with omit.zeros true)
 #' @param pval.cor compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and permutandboot with or without renorm)
-#' @param permut compute p-values on edges with a permutation test
+#' @param permut compute edge-specific p-values with a permutation test
+#' @param columnwise permute columns instead of rows for the permutation test
 #' @param renorm use renormalization when computing permutation distribution (only applied to correlations; cannot be combined with metadata)
 #' @param permutandboot compute p-values from both permutation (with or without renorm) and bootstrap distribution
 #' @param iters number of iterations for the permutation and bootstrap distributions
@@ -38,19 +42,20 @@
 #' @param pseudocount count added to zeros prior to taking logarithm (for KLD, p-value merge and significance)
 #' @param plot plot score or, if permut, permutandboot or pval.cor is true, p-value distribution, in both cases after thresholding
 #' @param verbose print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation
-#' @return igraph object with absolute association strengths, number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
+#' @return igraph object with edge weights being either the absolute difference from the mean association strength, the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
 #' @examples
 #' data("ibd_taxa")
 #' data("ibd_lineages")
 #' ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
-#' min.occ=nrow(ibd_genera)/3
-#' # p-values for the 50 strongest positive and 50 strongest negative Spearman correlations
-#' cn=barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,min.occ=min.occ,permutandboot=TRUE)
-#' plot(cn)
-#' # combine Bray Curtis and Spearman and threshold on method number
-#' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50,min.occ = min.occ))
+#' # only keep significant ones among the top 50 positive and negative Spearman correlations
+#' plot(barebonesCoNet(ibd_genera,methods="spearman",init.edge.num=50,permutandboot=TRUE))
+#' # only keep edges supported by both Bray Curtis and Spearman
+#' plot(barebonesCoNet(ibd_genera,methods=c("spearman","bray"),init.edge.num=50))
+#' # keep significant Euclidean distance on CLR-transformed data (samples are completed to sum to one)
+#' g=rbind(ibd_genera,rep(1,ncol(ibd_genera))-colSums(ibd_genera))
+#' plot(barebonesCoNet(g,clr=TRUE,methods="euclid",init.edge.num=50,permut=TRUE,columnwise=TRUE))
 #' @export
-barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"), T.up=NA, T.down=NA, method.num.T=2, pval.T=0.05, init.edge.num=max(2,round(sqrt(nrow(abundances)))), min.occ=0, keep.filtered=TRUE, norm=FALSE, stand.rows=FALSE, pval.cor=FALSE, permut=FALSE, renorm=FALSE, permutandboot=FALSE, iters=100, bh=TRUE, pseudocount=0.00000000001, plot=FALSE, verbose=FALSE){
+barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"), T.up=NA, T.down=NA, method.num.T=2, pval.T=0.05, init.edge.num=max(2,round(sqrt(nrow(abundances)))), min.occ=round(ncol(abundances)/3), keep.filtered=TRUE, norm=FALSE, stand.rows=FALSE, clr=FALSE, pval.cor=FALSE, permut=FALSE, columnwise=FALSE, renorm=FALSE, permutandboot=FALSE, iters=100, bh=TRUE, pseudocount=0.00000000001, plot=FALSE, verbose=FALSE){
 
   correlations=c("pearson","spearman")
   bh.selected=bh
@@ -102,7 +107,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
   }
   if(length(methods)==1){
     method=methods[1]
-    if(pval.cor == TRUE & (method == "kld" || method == "bray")){
+    if(pval.cor == TRUE & (method == "kld" || method == "bray" || method=="euclid")){
       stop("P-value computation with cor.test is only possible for correlations!")
     }
   }
@@ -113,16 +118,35 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
     #print(paste("Pseudocount:",pseudocount))
   }
 
+  if(clr){
+    keep.filtered=TRUE
+    if(renorm==TRUE){
+      renorm=FALSE
+      warning("Renormalization cannot be used in combination with CLR transform and is disabled.")
+    }
+  }
+
+  if(clr==TRUE && ("kld" %in% methods || "bray" %in% methods)){
+    stop("Bray-Curtis and Kullback-Leibler are not defined for negative values introduced by CLR!")
+  }
+
   ### Preprocessing
-  abundances = filterTaxonMatrix(abundances,keepSum = keep.filtered, minocc=min.occ)
+
+  abundances = filterTaxonMatrix(abundances,keepSum = keep.filtered, minocc=min.occ, return.filtered.indices = FALSE)
 
   # normalize matrix
   if(norm == TRUE){
     abundances=normalize(abundances)
   }
-  # normalize row-wise
-  if(stand.rows == TRUE){
-    abundances = t(normalize(t(abundances)))
+
+  if(!clr){
+    # normalize row-wise
+    if(stand.rows == TRUE){
+      abundances = t(normalize(t(abundances)))
+    }
+  }else{
+    # filtering has been carried out before
+    abundances=clr(abundances = abundances,minocc = 0, omit.zeros = TRUE)
   }
 
   if(!is.null(metadata)){
@@ -185,7 +209,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
         forbidden.combis=forbiddenCombisBipartite(separator.index = (length(taxon.names)+1), forbidden.combis = forbidden.combis)
       }
     }
-    res=computeAssociations(abundances,method=method, forbidden.combis = forbidden.combis, pval.T = pval.T, bh=bh, T.down=T.down, T.up=T.up, pval.cor = pval.cor, renorm=renorm.selected, permut=permut, permutandboot = permutandboot, verbose=verbose, plot=plot, iters=iters, pseudocount=pseudocount)
+    res=computeAssociations(abundances,method=method, forbidden.combis = forbidden.combis, pval.T = pval.T, bh=bh, T.down=T.down, T.up=T.up, pval.cor = pval.cor, columnwise=columnwise, renorm=renorm.selected, permut=permut, permutandboot = permutandboot, verbose=verbose, plot=plot, iters=iters, pseudocount=pseudocount)
     resultList[[method]]=res
     # no initial edge number specified: collect sign matrix
     if((is.na(init.edge.num) || init.edge.num==0) && is.null(metadata)){
@@ -235,12 +259,12 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
       score.matrix[is.na(score.matrix)]=0
       #print(score.matrix)
       diag(score.matrix)=0 # no self-loops
-      # scale edge weights
+      # compute absolute  difference of edge weights to mean edge weight so that both negative and positive edges have a large weight, which can be used as edge thickness
       if(method %in% correlations){
         score.matrix=abs(score.matrix)
       }else if(method=="bray"){
         score.matrix=abs(score.matrix-0.5)
-      }else if(method=="kld"){
+      }else if(method=="kld" || method=="euclid"){
         mean.score=mean(range(score.matrix))
         score.matrix=abs(score.matrix-mean.score)
       }
@@ -399,7 +423,7 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
 }
 
 # Compute row-wise associations and their p-values for the selected method. If thresholds are provided, apply them.
-computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", permut=FALSE, bh=TRUE, T.down=NA, T.up=NA, pval.T=0.05, pval.cor=FALSE, renorm=FALSE, permutandboot=TRUE, iters=1000, verbose=FALSE, plot=FALSE, pseudocount=NA){
+computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", permut=FALSE, columnwise=F, bh=TRUE, T.down=NA, T.up=NA, pval.T=0.05, pval.cor=FALSE, renorm=FALSE, permutandboot=TRUE, iters=1000, verbose=FALSE, plot=FALSE, pseudocount=NA){
   print(paste("Renormalisation is",renorm))
   print(paste("P-values of correlations are computed with cor.test",pval.cor))
   print(paste("Permutations and bootstraps are both computed",permutandboot))
@@ -424,7 +448,7 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
             if(pval.cor == TRUE && method %in% correlations){
               pvals[i, j] = cor.test(abundances[i,],abundances[j,],method=method)$p.value
             }else{
-              pvals[i, j] = getPval(abundances, i, j, method=method, N.rand=iters, renorm=renorm, permutandboot=permutandboot, verbose=verbose,  pseudocount=pseudocount)
+              pvals[i, j] = getPval(abundances, i, j, method=method, N.rand=iters, renorm=renorm, permutandboot=permutandboot, columnwise = columnwise, verbose=verbose,  pseudocount=pseudocount)
               #print(pvals[i,j])
             }
           } # check forbidden combis
@@ -460,7 +484,7 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
   # apply thresholds on scores
   }else{
     if(!is.na(T.up) && !is.na(T.down)){
-        print("up and down")
+        #print("up and down")
         # set all scores above lower threshold and below upper threshold to NA
         scores.temp=scores
         scores.temp[scores.temp>T.up]=Inf
@@ -529,7 +553,7 @@ computeSignMatrix<-function(scores, method="bray"){
       # Bray Curtis is bounded between 0 and 1, 1 being maximal dissimilarity
       sign.matrix[scores>0.5]=-1 # exclusion
       sign.matrix[scores<=0.5]=1 # copresence
-    }else if(method=="kld"){
+    }else if(method=="kld" || method=="euclid"){
         mid.point=mean(range(scores))
         sign.matrix[scores>mid.point]=-1 # exclusion
         sign.matrix[scores<=mid.point]=1 # copresence
@@ -554,8 +578,8 @@ getScores<-function(mat, method="spearman", pseudocount=NA){
     scores=cor(t(mat),method="spearman")
   }else if(method == "pearson"){
     scores=cor(t(mat),method="pearson")
-  }else if(method == "bray"){
-    scores = vegdist(mat, method="bray")
+  }else if(method == "bray" || method == "euclid"){
+    scores = vegdist(mat, method=method)
     scores=as.matrix(scores)
   }else if(method == "kld"){
     scores = computeKld(mat, pseudocount=pseudocount)
@@ -565,16 +589,65 @@ getScores<-function(mat, method="spearman", pseudocount=NA){
   return(scores)
 }
 
+#' @title Centered log-ratio (CLR) transform
+#' @description In the CLR transform, each entry is divided by the geometric mean of its sample
+#' and then the logarithm is taken.
+#' @details When omit.zeros is set to true, the default behaviour of clr in the compositions package
+#' when applied column-wise is reproduced.
+#' @param abundances a matrix with taxa as rows and samples as columns
+#' @param minocc prevalence filter; ignored if 0 or below
+#' @param pseudocount zero replacement value; should be above 0
+#' @param scale.factor scaling factor; abundances will be multiplied with this factor
+#' @param omit.zeros if TRUE, ignore pseudocount and compute clr transform only on non-zero elements
+#' @return clr-transformed matrix
+#' @export
+clr<-function(abundances, minocc=0, pseudocount=1, scale.factor=1, omit.zeros=FALSE){
+  # Boogaart published a theory on the omission of zeros in compositions: http://stat.boogaart.de/Publications/iamg06_s07_01.pdf
+  # it is yet unclear whether it is permissible to apply it to a set of compositions where different elements are missing
+  #print(paste("Prevalence filter:",minocc))
+  if(pseudocount<=0 && omit.zeros==FALSE){
+    stop("Please use a positive value for the pseudocount!")
+  }
+  if(minocc>0){
+    abundances=filterTaxonMatrix(x=abundances,minocc=minocc,keepSum = TRUE)
+  }
+  abundances=abundances*scale.factor
+  # init new matrix
+  clrtransformed=matrix(0,nrow=nrow(abundances),ncol=ncol(abundances))
+  rownames(clrtransformed)=rownames(abundances)
+  colnames(clrtransformed)=colnames(abundances)
+  # loop samples
+  for(i in 1:ncol(abundances)){
+    comp=abundances[,i]
+    if(omit.zeros){
+      nonzero.indices=which(comp>0)
+      comp=comp[nonzero.indices]
+    }else{
+      nonzero.indices=c(1:length(comp))
+      # set zeros to pseudocount
+      comp[comp==0]=pseudocount
+    }
+    # geom.mean=prod(nonzero.comp)^(1/length(nonzero.comp)) numeric problems here for small values
+    # trick taken from https://statisticsglobe.com/geometric-mean-in-r
+    geom.mean=exp(mean(log(comp)))
+    clrtransformed[nonzero.indices,i]=log(comp/geom.mean)
+  }
+  return(clrtransformed)
+}
 
-# Filter taxa in an abundance matrix
-# Discard taxa with less than the given minimum number of occurrences.
-# x taxon abundance matrix, rows are taxa, columns are samples
-# minocc minimum occurrence (minimum number of samples with non-zero taxon abundance)
-# keepSum If keepSum is true, the discarded rows are summed and the sum is added as a row with name: summed-nonfeat-rows
-# return.filtered.indices if true, return an object with the filtered abundance matrix in mat and the indices of removed taxa in the original matrix in filtered.indices
-# filtered abundance matrix
+
+
+#' @title Filter taxa in an abundance matrix
+#' @description Discard taxa with less than the given minimum number of occurrences.
+#' @param x taxon abundance matrix, rows are taxa, columns are samples
+#' @param minocc minimum occurrence (minimum number of samples with non-zero taxon abundance)
+#' @param keepSum If keepSum is true, the discarded rows are summed and the sum is added as a row with name: summed-nonfeat-rows
+#' @param return.filtered.indices if true, return an object with the filtered abundance matrix in mat and the indices of removed taxa in the original matrix in filtered.indices
+#' @return filtered abundance matrix
+#' @export
 filterTaxonMatrix<-function(x, minocc=0, keepSum=FALSE, return.filtered.indices=FALSE){
-  if(minocc==0){
+  #print(minocc)
+  if(minocc<=0){
     return(x)
   }else{
     toFilter=c()
@@ -608,18 +681,17 @@ filterTaxonMatrix<-function(x, minocc=0, keepSum=FALSE, return.filtered.indices=
 }
 
 
-# Normalize a matrix
-#
-# Normalize a matrix column-wise by dividing each entry by its corresponding column sum.
-#
-# Columns summing to zero are removed by default.
-#
-# a matrix
-# a normalized matrix
+#' @title Normalize a matrix
+#' @description Normalize a matrix column-wise by dividing each entry by its corresponding column sum.
+#' @param x a matrix
+#' @return a normalized matrix
+#' @export
 normalize<-function(x){
-  # remove columns with only zeros from matrix, to avoid dividing by a zero
   colsums = apply(x,2,sum)
   for(i in 1:ncol(x)){
+    if(colsums[i]==0){
+      stop(paste("The sum of column",i,"is zero!"))
+    }
     x[,i]=x[,i]/colsums[i]
   }
   x
@@ -640,6 +712,7 @@ normalize<-function(x){
 # renorm renormalize after permutation
 # permutandboot compute a bootstrap distribution in addition to the permutation distribution and
 #                 return the p-value as the mean of the permutation distribution under the bootstrap distribution
+# columnwise permute columns instead of rows for permutation test
 # plot plot the histogram of the permutation and, if permutandboot is true, of both the permutation and the bootstrap distribution
 # verbose print distribution properties and p-value
 # pseudocount pseudocount used when computing KLD
@@ -651,7 +724,7 @@ normalize<-function(x){
 # data("ibd_lineages")
 # ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
 # getPval(matrix=ibd_genera,x.index=9,y.index=5,method="spearman",permutandboot=T, verbose=T,plot=T)
-getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, plot=F, verbose=F,  pseudocount=0.00000001) {
+getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", renorm=F, permutandboot=F, columnwise=F, plot=F, verbose=F,  pseudocount=0.00000001) {
   x = as.numeric(matrix[x.index,])
   y = as.numeric(matrix[y.index,])
   lower.tail = FALSE
@@ -661,16 +734,24 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
   }else if(method == "pearson"){
     this.sim = cor(x, y, use="complete.obs", method="pearson")
   }else if(method == "bray"){
-    this.sim= vegdist(rbind(x,y),method="bray")
+    this.sim = vegdist(rbind(x,y),method="bray")
   }else if(method == "kld"){
     this.sim=get.kld(x,y, pseudocount = pseudocount)
+  }else if(method == "euclid"){
+    # after CLR-transform, euclidean distance is equivalent to Aitchison distance according to Gloor et al., Frontiers in Microbiology 2017
+    this.sim=sqrt(sum((x-y)^2))
   }else{
     stop("Select either spearman, pearson, kld or bray as method.")
   }
   rand.sim = rep(NA, N.rand)
   boot.sim = rep(NA, N.rand)
   for (i in 1:N.rand) {
-    rand = sample(x, length(x))
+    if(columnwise==TRUE){
+      shuffled.matrix=apply(matrix,2,sample)
+      rand = shuffled.matrix[x.index,]
+    }else{
+      rand = sample(x, length(x))
+    }
     if(renorm == T){
       mat.copy=matrix
       mat.copy[x.index,]=rand
@@ -682,8 +763,8 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
       rand.sim[i] = cor(rand, y, method="spearman", use="complete.obs")
     }else if(method == "pearson"){
       rand.sim[i] = cor(rand, y, method="pearson",use="complete.obs")
-    }else if(method == "bray"){
-      rand.sim[i] = vegdist(rbind(rand,y),method="bray")
+    }else if(method == "bray" || method == "euclid"){
+      rand.sim[i] = vegdist(rbind(rand,y),method=method)
     }else if(method == "kld"){
       rand.sim[i] = get.kld(rand,y, pseudocount = pseudocount)
     }
@@ -706,8 +787,8 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
         boot.sim[i] = cor(x.boot, y.boot, method="spearman", use="complete.obs")
       }else if(method == "pearson"){
         boot.sim[i] = cor(x.boot, y.boot, method="pearson",use="complete.obs")
-      }else if(method == "bray"){
-        boot.sim[i] = vegdist(rbind(x.boot,y.boot),method="bray")
+      }else if(method == "bray" || method == "euclid"){
+        boot.sim[i] = vegdist(rbind(x.boot,y.boot),method=method)
       }else if(method == "kld"){
         boot.sim[i] = get.kld(x.boot,y.boot, pseudocount = pseudocount)
       }
@@ -733,7 +814,8 @@ getPval = function(matrix, x.index, y.index, N.rand=1000, method="spearman", ren
     # if we got enough non-NA permutation values, compute p-value
     if(length(rand.sim) > round(N.rand/3)){
       # bray and kld are dissimilarities, so one-sided p-value needs to be computed from the lower tail (the smaller the better)
-      if(method == "bray" || method == "kld"){
+      # euclid is a distance, so the same logic applies
+      if(method == "bray" || method == "kld" || method == "euclid"){
         lower.tail = TRUE
       }
       # look at left tail for negative correlations

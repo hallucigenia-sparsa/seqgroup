@@ -34,6 +34,8 @@ seqPCoA(
   taxonColor = "brown",
   metadataColor = "blue",
   drawEllipse = FALSE,
+  ellipseOnClusters = FALSE,
+  ellipseColorMap = NULL,
   clusterQualityIndex = "silhouette",
   groupDispersion = FALSE,
   xlim = NULL,
@@ -105,6 +107,10 @@ seqPCoA(
 \item{metadataColor}{the color of the metadata arrows and text}
 
 \item{drawEllipse}{if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)}
+
+\item{ellipseOnClusters}{draw ellipse around cluster members (indicated by shape) instead of group members (indicated by color)}
+
+\item{ellipseColorMap}{color ellipses according to this color list; entries have to be group names or, if ellipseOnClusters is true, cluster names; overrides groupColors for ellipses}
 
 \item{clusterQualityIndex}{if groups or groupAttrib given, report cluster quality according to silhouette function or any criterium supported by package clusterCrit (default: silhouette, set to none to disable computation of cluster quality)}
 

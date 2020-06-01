@@ -11,8 +11,7 @@ silhouette(abundances, groups, method = "bray")
 
 \item{groups}{vector with group memberships}
 
-\item{method}{name of dissimilarity or distance to use. See vegdist for options
-#' @export}
+\item{method}{name of dissimilarity or distance to use. See vegdist for options}
 }
 \description{
 A wrapper around vegdist that computes the silhouette score directly on these distances
