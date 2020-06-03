@@ -152,10 +152,10 @@ compareDistribs(ibd_taxa.nafree,taxon=taxon,groups=ibd.groups.nafree,group1="IBD
 
 ## Sample-wise clustering
 
-We can check if unsupervised clustering uncovers the three groups we know. DMM clustering implemented in the DirichletMultinomial package is often used for sample-wise clustering of microbial abundances, though many alternatives exist. Here, we will use the Calinski Harabasz index implemented in the clusterCrit package to determine an optimal cluster number for DMM clustering. For this tutorial, we will test the quality of up to 6 clusters. The agreement of clusters with groups can then be inspected visually in an ordination.  
+We can check if unsupervised clustering uncovers the three groups we know. DMM clustering implemented in the DirichletMultinomial package is often used for sample-wise clustering of microbial abundances, though many alternatives exist. Here, we will use the Calinski Harabasz index implemented in the clusterCrit package to determine an optimal cluster number for DMM clustering. For this tutorial, we will test the quality of up to 5 clusters. The agreement of clusters with groups can then be inspected visually in an ordination.  
 
 ```{r, message=FALSE, results='hide', warning=FALSE, fig.align = "center", fig.height = 6, fig.width = 6}
-clusters=findClusters(ibd_taxa,k=NA,maxK=6,qualityIndex = "CH")
+clusters=findClusters(ibd_taxa,k=NA,maxK=5,qualityIndex = "CH")
 seqPCoA(ibd_taxa,groups=groups,clusters=clusters, topTaxa=30)
 ```
 
@@ -220,7 +220,7 @@ ibd_functions_incidence[ibd_functions_incidence>0]=1
 rowSums=rowSums(ibd_functions_incidence)
 indices.functions.prev=which(rowSums>=prev)
 # CoNet expects metadata to have samples as rows, therefore functions have to be transposed
-bip.network=barebonesCoNet(abundances=ibd_taxa[indices.prev,],metadata=t(ibd_functions[indices.functions.prev,]),methods="pearson",T.up=0.7,T.down=-0.7) 
+bip.network=barebonesCoNet(abundances=ibd_taxa[indices.prev,],metadata=t(ibd_functions[indices.functions.prev,]),min.occ=0,methods="pearson",T.up=0.7,T.down=-0.7) 
 plot(bip.network,main="Global species-function network")
 ```
 
