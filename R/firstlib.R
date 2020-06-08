@@ -33,6 +33,7 @@
 #' @importFrom phyloseq phyloseq
 #' @importFrom phyloseq plot_network
 #' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 scale_fill_manual
 #' @importFrom ggplot2 geom_boxplot
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 geom_jitter

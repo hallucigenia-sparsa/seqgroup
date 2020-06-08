@@ -9,6 +9,7 @@ compareGroups(
   property = "beta",
   method = "dissim",
   groups = c(),
+  colors = c(),
   plot.type = "pergroup",
   avg = "none",
   all = FALSE,
@@ -27,6 +28,8 @@ compareGroups(
 \item{method}{for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported}
 
 \item{groups}{group membership vector with as many entries as samples in abundances}
+
+\item{colors}{define a color for each group with as many entries as there are groups, appearing in the order in which groups first appear (only for plot.type pergroup)}
 
 \item{plot.type}{pergroup (plot property per group; this is the only plot type available for richness, evenness, alpha and beta with DM) and intravsinter (plot property for all within-group samples versus all samples)}
 

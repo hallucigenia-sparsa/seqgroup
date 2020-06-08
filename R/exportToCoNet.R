@@ -106,3 +106,23 @@ formatLineages<-function(lineages, taxa.in.rownames=FALSE){
   }
   return(lineages.export.table)
 }
+
+# metadata: a dataframe with metadata items as columns
+# toMerge: names of binary metadata items to be merged into a single multinomial item
+# function returns the merged metadata item
+binaryToMultinomial<-function(metadata, toMerge=c()){
+  merged=c()
+  for(sample.index in 1:nrow(metadata)){
+    done=FALSE
+    for(merge.counter in 1:length(toMerge)){
+      if(metadata[[toMerge[merge.counter]]][sample.index]!=0){
+        if(done==TRUE){
+          warning(paste("More than one binary item in the set to be merged has a non-zero value for sample",sample.index,"!"))
+        }
+        merged=c(merged,merge.counter)
+        done=TRUE
+      }
+    } # loop binary items to be merged
+  } # loop samples
+  return(merged)
+}

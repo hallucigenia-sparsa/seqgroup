@@ -263,14 +263,15 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
               # two-sided, unpaired Wilcoxon test
               val1=unique(mat[,index1])
               val2=unique(mat[,index2])
+              isProblem=FALSE
+              if((length(val1)==1 && is.na(val1)) || (length(val2)==1 && is.na(val2))){
+                isProblem=TRUE
+              }
               # avoid result only consisting of missing values (e.g. if group has only 1 sample)
-              if(!is.na(val1) && !is.na(val2)){
-                #print(unique(mat[,index1]))
-                #print(unique(mat[,index2]))
+              if(!isProblem){
                 w.out=wilcox.test(mat[,index1],mat[,index2])
               }else{
                 w.out$p.value=0.5
-                #print("problem")
               }
               if(w.out$p.value<0.05){
                 #print(w.out$p.value)

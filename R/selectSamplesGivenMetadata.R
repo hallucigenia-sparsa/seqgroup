@@ -62,32 +62,100 @@ selectSamplesGivenMetadata<-function(abundances, metadata, metadata.name="", met
   return(res)
 }
 
-# Helper function to match age and gender for two data sets
-# age1: age vector foor first data set
-# gender1: gender vector for first data set
-# age2: age vector for second data set
-# gender2: gender vector for second data set
-# range: allowed deviation for age
-# TODO: to complete
-matchAgeAndGender<-function(age1=c(), gender1=c(), age2=c(), gender2=c(), range=3){
-  for(index in 1:length(age1)){
-    queryage=age1[index]
+# Helper function to match age and gender for two data sets.
+# Age is matched first, and gender is matched in case there is
+# more than one sample that matches age within given range.
+# If range is smaller than 1, gender is not matched.
+# age1: age vector for query data set
+# gender1: optional gender vector for query data set
+# age2: age vector for target data set
+# gender2: optional gender vector for target data set; needed if gender1 is given
+# range: allowed deviation for age in years
+# The method returns the indices of the selected target samples.
+matchAgeAndGender<-function(age1=c(), gender1=c(), age2=c(), gender2=c(), range=1){
+  selected.target.indices=c()
+  if(length(gender1)>1 && length(gender2)==0){
+    stop("If you provide a query gender vector, please provide a target gender vector.")
+  }
+  if(range<=0 && length(gender1)>0){
+    gender1=c()
+    warning("In order to match age and gender, please provide a range larger 0.")
+  }
+  # loop query age vector
+  for(query.index in 1:length(age1)){
+    queryage=age1[query.index]
     # try exact match first
     okindices=age2[age2==queryage]
-    # if that fails, check for samples with age within the allowed range
-    if(length(okindices)<1){
-      okindices=c()
-      for(secondindex in 1:length(age2)){
-        if(age2[secondindex] < (queryage+range) && age2[secondindex] > (queryage-range)){
-          okindices=c(okindices,secondindex)
+    newIndexFound=FALSE
+    if(length(okindices)>0){
+      for(okindex in okindices){
+        # select only one match
+        if(!(okindex %in% selected.target.indices) && !newIndexFound){
+          newIndexFound=TRUE
+          # no gender match required
+          if(length(gender1)==0){
+            selected.target.indices=c(selected.target.indices,okindex)
+          }
         }
-      }
+      } # end loop indices found
+    } # end test indices found
+    # if exact age match fails or if gender is provided or if all target indices were already selected, check for samples with age within the allowed range
+    if(length(gender1)>0 || !newIndexFound){
+      # check within range
+      if(range>0){
+        okindices=c()
+        # collect target samples with age within range
+        for(target.index in 1:length(age2)){
+          if(age2[target.index] <= (queryage+range) && age2[target.index] >= (queryage-range)){
+            okindices=c(okindices,target.index)
+          }
+        }
+        print(paste("Found",length(okindices),"samples with age within range"))
+        # no matching age found within range
+        if(length(okindices)<1){
+          warning(paste("No matching age found for sample",query.index," and range ",range,". Consider expanding the range."))
+        }
+        # find matching gender
+        else if(length(gender1)>0){
+          newIndexFoundWithGender=FALSE
+          for(okindex in okindices){
+            if(gender1[query.index]==gender2[okindex]){
+              if(!(okindex %in% selected.target.indices) && !newIndexFoundWithGender){
+                selected.target.indices=c(selected.target.indices,okindex)
+                newIndexFoundWithGender=TRUE
+              }
+            }
+          } # end loop indices
+          if(!newIndexFoundWithGender){
+            warning(paste("Did not find target sample with matching gender not found before for sample",query.index))
+            for(okindex in okindices){
+              if(!(okindex %in% selected.target.indices) && !newIndexFound){
+                selected.target.indices=c(selected.target.indices,okindex)
+                newIndexFound=TRUE
+              }
+            } # end loop indices
+          }
+          if(!newIndexFound){
+            warning(paste("Did not find target sample for query sample",query.index, "with matching age not found before"))
+          }
+        # no need to match gender
+        }else if(length(gender1)==0){
+          for(okindex in okindices){
+            if(!(okindex %in% selected.target.indices) && !newIndexFound){
+              selected.target.indices=c(selected.target.indices,okindex)
+              newIndexFound=TRUE
+            }
+          } # end loop indices
+          if(!newIndexFound){
+            warning(paste("Did not find target sample for query sample",query.index, "with matching age not found before"))
+          }
+        }
+      } # end range larger 0; with 0 range, nothing else can be done
+    } # end no new index found or gender matching enabled
+    if(!newIndexFound){
+      warning(paste("No matching age or no new matchig age found for sample",query.index," and range ",range,". Consider expanding the range."))
     }
-    print(paste("Found",length(okindices),"samples with age within range"))
-    if(length(okindices>1)){
-      # find matching gender
-      #if(gender1)
-    }
-  }
+  } # end loop over query indices
+  return(selected.target.indices)
 }
 
