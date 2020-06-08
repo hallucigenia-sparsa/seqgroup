@@ -7,6 +7,7 @@
 #' @param property richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)
 #' @param method for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported
 #' @param groups group membership vector with as many entries as samples in abundances
+#' @param colors define a color for each group with as many entries as there are groups, appearing in the order in which groups first appear (only for plot.type pergroup)
 #' @param plot.type pergroup (plot property per group; this is the only plot type available for richness, evenness, alpha and beta with DM) and intravsinter (plot property for all within-group samples versus all samples)
 #' @param avg none, mean or median (average group property with the selected averaging method, does not work for method DM)
 #' @param all include the beta diversity for all samples
@@ -21,7 +22,7 @@
 #' groups=as.vector(ibd_metadata$Diagnosis)
 #' compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
 #' @export
-compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE){
+compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), colors=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE){
   supported.properties=c("richness","evenness","alpha","beta")
   if(plot.type=="intravsinter" && property!="beta"){
     stop("The intravsinter plot type is only supported for beta diversity!")
@@ -69,6 +70,14 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   if(property!="beta"){
     method=""
   }
+  if(length(colors)>0 && length(groups)>0){
+    if(length(colors)!=length(unique(groups))){
+      stop("Please provide as many colors as there are groups!")
+    }
+  }
+  if(length(colors)==0 && length(groups)>0){
+    colors=rep("white",length(groups))
+  }
   unique.groups=unique(groups)
   if(is.numeric(unique.groups)){
     unique.groups=sort(unique.groups)
@@ -114,8 +123,11 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
       group.indices=sample(group.indices)[1:sampleNum]
     }
     group.data=abundances[,group.indices]
+    if(length(group.indices)==1){
+      group.data=as.matrix(group.data)
+    }
     if(property=="beta"){
-      if(is.null(group.data)==FALSE && ncol(group.data) > 1){
+      if(is.null(group.data)==FALSE && ncol(group.data) > 0){
         groups.with.theta=c(groups.with.theta,group)
         if(method == "dissim"){
           main="Beta diversity (Bray Curtis dissimilarities)"
@@ -210,7 +222,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
         thetas=c(intradissim,interdissim)
       }
       range=c(0,max(thetas))
-      barplot(thetas,names.arg=names.arg,xlab=xlab,ylab="Theta",main="Estimated overdispersion",ylim=range)
+      barplot(thetas,names.arg=names.arg,xlab=xlab,ylab="Theta",main="Estimated overdispersion",ylim=range, col = colors)
     }else{
       if(avg!="none"){
         names(groupspecavgprops)=unique.groups
@@ -229,7 +241,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
          range=c(0,1)
         }
         ylab=paste(avg,ylab)
-        barplot(groupspecavgprops,xlab=xlab,ylab=ylab,main=main,ylim=range)
+        barplot(groupspecavgprops,xlab=xlab,ylab=ylab,main=main,ylim=range, col=colors)
       }else{
         # richness, evenness and alpha-diversity that are not averaged as well as beta-diversity with method dissim are displayed as box plots
         if(all && property=="beta"){
@@ -249,7 +261,17 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
               unit1=units[index1]
               unit2=units[index2]
               # two-sided, unpaired Wilcoxon test
-              w.out=wilcox.test(mat[,index1],mat[,index2])
+              val1=unique(mat[,index1])
+              val2=unique(mat[,index2])
+              # avoid result only consisting of missing values (e.g. if group has only 1 sample)
+              if(!is.na(val1) && !is.na(val2)){
+                #print(unique(mat[,index1]))
+                #print(unique(mat[,index2]))
+                w.out=wilcox.test(mat[,index1],mat[,index2])
+              }else{
+                w.out$p.value=0.5
+                #print("problem")
+              }
               if(w.out$p.value<0.05){
                 #print(w.out$p.value)
                 combinations[[paste(unit1,unit2,sep="")]]=c(unit1,unit2)
@@ -260,15 +282,16 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
           variable="" # to avoid error message in package built
           df_melt <- melt(df)
           if(length(combinations)>0){
+            # TODO: colors are ignored
             # cannot set ylim, else p-values are not plotted correctly
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2))
+            ggplot(df_melt, aes(variable,value))+geom_boxplot()+scale_fill_manual(values=colors)+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2))
           }else{
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
+            ggplot(df_melt, aes(variable,value))+geom_boxplot()+scale_fill_manual(values=colors)+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
           }
         }else{
           #print(dim(mat))
           #print(colnames(mat))
-          boxplot(mat,ylab=ylab, main=main, xlab=xlab, notch=FALSE,ylim=ylim) # border=colors
+          boxplot(mat,ylab=ylab, main=main, xlab=xlab, notch=FALSE,ylim=ylim, col = colors) # border=colors
           for(i in 1:ncol(mat)){
             points(rep(i,length(mat[,i])),mat[,i])
           }
