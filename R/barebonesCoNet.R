@@ -8,9 +8,7 @@
 #' @details If renorm and permutandboot are both set to TRUE, p-value computation is equal to the ReBoot procedure implemented
 #' in CoNet. If more than one method is selected and p-value computation is enabled, p-values are merged with Fisher's method, multiple
 #' testing correction (if enabled) is applied on the merged p-value and the merged p-value is reported. If p-value computation is not enabled,
-#' the method number is reported as association strength. Note that for a single dissimilarity method, weights are scaled to the absolute distance
-#' from the mean value (for bounded Bray Curtis, this is 0.5 and for KLD, this is the mean of the observed scores), such that a larger edge weight
-#' means a stronger association.
+#' the method number is reported as association strength.
 #' Edge signs (co-presence/mutual exclusion) are assigned using thresholds (T.up/T.down directly or indirectly via top/bottom initial edge number).
 #' Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exclusion (low correlation/high dissimilarity) in red and sign conflicts
 #' (lack of agreement between methods) in gray.
@@ -42,7 +40,7 @@
 #' @param pseudocount count added to zeros prior to taking logarithm (for KLD, p-value merge and significance)
 #' @param plot plot score or, if permut, permutandboot or pval.cor is true, p-value distribution, in both cases after thresholding
 #' @param verbose print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation
-#' @return igraph object with edge weights being either the absolute difference from the mean association strength, the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
+#' @return igraph object with edge weights being either association strengths (single method), the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval))
 #' @examples
 #' data("ibd_taxa")
 #' data("ibd_lineages")
@@ -259,15 +257,6 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
       score.matrix[is.na(score.matrix)]=0
       #print(score.matrix)
       diag(score.matrix)=0 # no self-loops
-      # compute absolute  difference of edge weights to mean edge weight so that both negative and positive edges have a large weight, which can be used as edge thickness
-      if(method %in% correlations){
-        score.matrix=abs(score.matrix)
-      }else if(method=="bray"){
-        score.matrix=abs(score.matrix-0.5)
-      }else if(method=="kld" || method=="euclid"){
-        mean.score=mean(range(score.matrix))
-        score.matrix=abs(score.matrix-mean.score)
-      }
       res.graph=graph_from_adjacency_matrix(score.matrix,mode="undirected",weighted=TRUE)
     }
   # multiple methods - merge
@@ -550,9 +539,10 @@ computeSignMatrix<-function(scores, method="bray"){
     sign.matrix[scores<0]=-1 # mutual exclusion
   }else{
     if(method=="bray"){
-      # Bray Curtis is bounded between 0 and 1, 1 being maximal dissimilarity
+      # Bray Curtis is a dissimilarity bounded between 0 and 1, 1 being maximal dissimilarity
       sign.matrix[scores>0.5]=-1 # exclusion
       sign.matrix[scores<=0.5]=1 # copresence
+      # KLD and Euclidean are dissimilarities that are not bounded
     }else if(method=="kld" || method=="euclid"){
         mid.point=mean(range(scores))
         sign.matrix[scores>mid.point]=-1 # exclusion
@@ -584,7 +574,7 @@ getScores<-function(mat, method="spearman", pseudocount=NA){
   }else if(method == "kld"){
     scores = computeKld(mat, pseudocount=pseudocount)
   }else{
-    stop("Choose either spearman, pearson, kld or bray as a method.")
+    stop("Choose either spearman, pearson, kld, euclid or bray as a method.")
   }
   return(scores)
 }

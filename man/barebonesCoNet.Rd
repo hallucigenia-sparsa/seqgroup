@@ -78,7 +78,7 @@ barebonesCoNet(
 \item{verbose}{print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation}
 }
 \value{
-igraph object with edge weights being either the absolute difference from the mean association strength, the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval)) as edge weights
+igraph object with edge weights being either association strengths (single method), the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval))
 }
 \description{
 Build a network using Pearson, Spearman, Euclidean, Kullback-Leibler and/or Bray-Curtis.
@@ -90,9 +90,7 @@ barebonesCoNet and other network inference methods, see \code{\link{buildNetwork
 If renorm and permutandboot are both set to TRUE, p-value computation is equal to the ReBoot procedure implemented
 in CoNet. If more than one method is selected and p-value computation is enabled, p-values are merged with Fisher's method, multiple
 testing correction (if enabled) is applied on the merged p-value and the merged p-value is reported. If p-value computation is not enabled,
-the method number is reported as association strength. Note that for a single dissimilarity method, weights are scaled to the absolute distance
-from the mean value (for bounded Bray Curtis, this is 0.5 and for KLD, this is the mean of the observed scores), such that a larger edge weight
-means a stronger association.
+the method number is reported as association strength.
 Edge signs (co-presence/mutual exclusion) are assigned using thresholds (T.up/T.down directly or indirectly via top/bottom initial edge number).
 Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exclusion (low correlation/high dissimilarity) in red and sign conflicts
 (lack of agreement between methods) in gray.
