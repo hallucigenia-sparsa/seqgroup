@@ -19,13 +19,14 @@ compareGroups(
   subsample = TRUE,
   xlab = "",
   pvalViz = FALSE,
+  pAdjMethod = "BH",
   returnValues = FALSE
 )
 }
 \arguments{
 \item{abundances}{a matrix with taxa as rows and samples as columns}
 
-\item{property}{richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)}
+\item{property}{richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index), beta (beta-diversity), taylor (slope of the Taylor law)}
 
 \item{method}{for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported}
 
@@ -49,7 +50,9 @@ compareGroups(
 
 \item{xlab}{the x axis label}
 
-\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr}
+\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr}
+
+\item{pAdjMethod}{multiple testing correction method to use for p-value plotting (values are those accepted by p.adjust)}
 
 \item{returnValues}{if true, return properties}
 }
@@ -60,7 +63,8 @@ if returnValues is true, properties are returned
 The function allows to compare richness, evenness, alpha diversity and beta diversity across groups, where
 beta diversity can be assessed with both a Bray Curtis distribution or overdispersion from a Dirichlet-Multinomial distribution fit.
 By default, groups are subsampled to the same sample number, for this reason the output of the same run can differ. To switch off this
-behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan.
+behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan. The Taylor law is computed taxon-wise
+as the slope of the regression line for the logarithm of the mean abundance of taxa and the logarithm of the variance of taxa.
 }
 \examples{
 data("ibd_taxa")

@@ -1,17 +1,22 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
-
+# it looks as if packages are restored from CRAN rather than the renv.lock file; may need to indicate renv.lock file in restore
+# travis_wait  before sudo apt-get works, but creates a log file that then results in a note in the R build
 language: R
 cache:
   directories:
   - $HOME/.local/share/renv
   - $TRAVIS_BUILD_DIR/renv/library
 
+env:
+   global:
+     - R_BUILD_ARGS="--no-build-vignettes --no-manual"
+
 warnings_are_errors: false
 r: 3.6.1
 
 r_github_packages:
   - zdk123/SpiecEasi
-before_install: travis_wait sudo apt-get install gsl-bin libgsl0-dev
+before_install: sudo apt-get install gsl-bin libgsl0-dev
 
 install:
   - Rscript -e "if (!requireNamespace('renv', quietly = TRUE)) install.packages('renv')"
