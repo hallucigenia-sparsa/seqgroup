@@ -1,9 +1,19 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
-cache: packages
+cache:
+  directories:
+  - $HOME/.local/share/renv
+  - $TRAVIS_BUILD_DIR/renv/library
+
 warnings_are_errors: false
 r: bioc-release
+
 r_github_packages:
   - zdk123/SpiecEasi
 before_install: travis_wait sudo apt-get install gsl-bin libgsl0-dev
+
+install:
+  - Rscript -e "if (!requireNamespace('renv', quietly = TRUE)) install.packages('renv')"
+  - Rscript -e "renv::restore()"
+
