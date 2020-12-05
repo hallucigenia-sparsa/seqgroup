@@ -41,6 +41,6 @@ taxon="Faecalibacterium_prausnitzii"
 compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="UC",group2="Control")
 groups[groups=="UC"]="IBD"
 groups[groups=="CD"]="IBD"
-# Faecalibacterium is significantly more abundant in the control group
+# Faecalibacterium has a significantly higher relative abundance in the control group
 compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="IBD",group2="Control")
 }

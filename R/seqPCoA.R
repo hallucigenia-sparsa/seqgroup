@@ -33,8 +33,8 @@
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
 #' @param groups an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided
-#' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent
-#' @param colors an optional vector of colors to be used to color samples; it overrides groupColors if provided
+#' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent
+#' @param colors an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided
 #' @param clusters an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)
 #' @param labels an optional vector that provides for each sample a label to display
 #' @param sizes a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)
@@ -53,6 +53,7 @@
 #' @param centroidFactor centroid positions (representing categoric metadata) are multiplied with this factor
 #' @param taxonColor the color of the taxon arrows and text
 #' @param metadataColor the color of the metadata arrows and text
+#' @param hideGroupLegend do not show the group legend
 #' @param drawEllipse if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)
 #' @param ellipseOnClusters draw ellipse around cluster members (indicated by shape) instead of group members (indicated by color)
 #' @param ellipseColorMap color ellipses according to this color list; entries have to be group names or, if ellipseOnClusters is true, cluster names; overrides groupColors for ellipses
@@ -81,7 +82,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", drawEllipse=FALSE, ellipseOnClusters=FALSE, ellipseColorMap=NULL, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", hideGroupLegend=FALSE, drawEllipse=FALSE, ellipseOnClusters=FALSE, ellipseColorMap=NULL, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
 
   # Test
   # path.vdp="/Users/u0097353/Documents/Documents_Karoline/MSysBio_Lab/Results/Nephrology/Data/vdp_genera.txt"
@@ -332,6 +333,9 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     ylab=paste(redun.method,dimensions[2],sep="")
   }
 
+  # select indices of samples to show (if hiddenSamples is empty, this will be all)
+  selected.sample.indices=setdiff(1:ncol(abundances),hiddenSamples)
+
   if(length(colors)>0){
     # use pre-assigned colors
     if(length(colors)!=ncol(abundances)){
@@ -347,8 +351,6 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     }
   }
 
-  # select indices of samples to show (if hiddenSamples is empty, this will be all)
-  selected.sample.indices=setdiff(1:ncol(abundances),hiddenSamples)
 
   # assign cluster memberships as shapes
   if(length(clusters)>0){
@@ -383,6 +385,9 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     ylim=range(pcoa.res$CA$u[selected.sample.indices,dimensions[2]])
   }
 
+  #print("size info")
+  #print(sizes)
+
   if(!is.null(sizes) || length(sizes)>0){
     display.size.legend=TRUE
     # shift into positive range
@@ -394,11 +399,15 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     sizes=sizes+min.cex # make sure there is no dot of size zero
     #print(range(sizes))
   }else{
-    sizes=rep(par()$cex,length(selected.sample.indices)) # default size
+    #sizes=rep(par()$cex,length(selected.sample.indices))
+    sizes=rep(par()$cex,ncol(abundances)) # default size
   }
 
+  #print(length(sizes[selected.sample.indices]))
+  #print(sizes[selected.sample.indices])
+
   if(!addToRefStepwise){
-    plot(pcoa.res$CA$u[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+    plot(pcoa.res$CA$u[selected.sample.indices,dimensions],cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
   }else{
     plot(sample.coords[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
   }
@@ -426,6 +435,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     if(length(groups)==0){
       warning("Please specify groups in order to draw ellipses!")
     }else{
+      show.groups=unique(groups[selected.sample.indices])
       # draw transparent ellipses around samples of the same groups with given confidence
       # by default, color order is not correct, because ordiellipse calls factor on the groups, which sorts entries alphabetically
       # for this reason, factor with correct ordering is reassigned to groups
@@ -439,9 +449,9 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
         }else{
           cluster.colors=assignColorsToGroups(clusters, refName = refName)
         }
-        ordiellipse(pcoa.res,scaling=0,groups=cluster.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(cluster.colors))
+        ordiellipse(pcoa.res,scaling=0,groups=cluster.factor, show.groups = show.groups ,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(cluster.colors))
       }else{
-        ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(colors))
+        ordiellipse(pcoa.res,scaling=0,groups=groups.factor, show.groups = show.groups, draw="polygon",alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=unique(colors))
       }
       # adonis fails for step-wise addition of samples to reference
       adonis_results = adonis(data.frame(t(abundances)) ~ groups.factor, permutations = env.permut, method=dis)
@@ -615,7 +625,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     } # significant factors found
   }
 
-  if(length(groups)>0){
+  if(length(groups)>0 && !hideGroupLegend){
     # cex=0.9
     legend("topright",legend=unique(groups[selected.sample.indices]),cex=0.9, pch = rep("*",length(unique(groups[selected.sample.indices]))), col = unique(colors[selected.sample.indices]), bg = "white", text.col="black")
   }
@@ -635,6 +645,17 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       max.legend=paste(max.legend," ",size.legend,sep="")
     }
     legend("bottomleft",legend=c(min.legend,max.legend),pt.cex=c(min.cex,max.cex), pch = c(1,1), col = "black", bg = "white", text.col="black")
+  }
+
+  # color map legend
+  if(!is.null(groupColors)){
+    legend.colors=c()
+    for(name in names(groupColors)){
+      legend.colors=c(legend.colors,groupColors[[name]])
+    }
+    # invisible
+    trans.col= rgb(255, 255, 255, maxColorValue = 255, alpha = 125)
+    legend("bottomright",legend=names(groupColors), box.lty=0, box.col=trans.col, bg=trans.col, cex=0.9, text.col=legend.colors)
   }
 
   # A non-significant result in betadisper is not necessarily related to a significant/non-significant result in adonis.
@@ -663,12 +684,16 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
 #'
 #' @param groups a vector of group memberships
 #' @param refName the name of the reference group; receives gray as a color
-#' @param myColors a map of predefined colors for groups
+#' @param myColors an optional map of predefined colors for groups
 #' @param returnMap whether to return the color map together with the colors
+#' @param hiddenSamples optional vector of indices of samples to be hidden; these are assigned an invisible color
 #' @return a vector of colors; if returnMap is true, a vector of colors and the color map
 #' @export
 #'
-assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap=FALSE){
+assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap=FALSE, hiddenSamples=c()){
+  # make a fully transparent color to hide samples
+  trans.col=rgb(0, 1, 0, alpha=0)
+
   refContained=FALSE
   if(refName %in% groups){
     refContained=TRUE
@@ -703,7 +728,11 @@ assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap
   for(group.index in 1:length(groups)){
     #print(groups[group.index])
     #print(myColors[[as.character(groups[group.index])]])
-    colors=c(colors,myColors[[as.character(groups[group.index])]])
+    if(group.index %in% hiddenSamples){
+      colors=c(colors,trans.col)
+    }else{
+      colors=c(colors,myColors[[as.character(groups[group.index])]])
+    }
   }
 
   if(returnMap){
@@ -742,7 +771,7 @@ myNorm<-function(x){
 # they are discarded. Rows that have a sum of zero after rarefaction are also discarded.
 # x a matrix
 # min minimum count to which x is to be rarefied (if equal to zero, the minimum column sum is taken as min)
-# a list with the rarefied matrix (rar) and the indices of the columns that were kept (colindices)
+# a list with the rarefied matrix (rar) and the indices of the rows and the columns that were kept (rowindices and colindices)
 rarefyFilter<-function(x,min = 0){
   keep=c()
   if(min < 0){
@@ -774,8 +803,8 @@ rarefyFilter<-function(x,min = 0){
     keep.nonzero=setdiff(1:nrow(rar),zero.indices)
     rar=rar[keep.nonzero,]
   }
-  res=list(rar,keep)
-  names(res)=c("rar","colindices")
+  res=list(rar,keep.nonzero,keep)
+  names(res)=c("rar","rowindices","colindices")
   return(res)
 }
 

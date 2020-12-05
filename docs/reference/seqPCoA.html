@@ -8,23 +8,29 @@
 
 <title>PCoA for microbial sequencing data — seqPCoA • seqgroup</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -32,12 +38,12 @@
 
 
 
-<meta property="og:title" content="PCoA for microbial sequencing data — seqPCoA" />
 
+<meta property="og:title" content="PCoA for microbial sequencing data — seqPCoA" />
 <meta property="og:description" content="A wrapper around various PCoA-based analyses implemented in vegan. The wrapper can handle groups and
 metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, however envfit cannot deal with
 missing values, therefore if metadata are provided, they should be free of missing values." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -54,7 +60,7 @@ missing values, therefore if metadata are provided, they should be free of missi
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -96,7 +102,6 @@ missing values, therefore if metadata are provided, they should be free of missi
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -118,26 +123,57 @@ missing values, therefore if metadata are provided, they should be free of missi
     </div>
 
     <div class="ref-description">
-    
     <p>A wrapper around various PCoA-based analyses implemented in vegan. The wrapper can handle groups and
 metadata. PCoA is carried out sample-wise. The na.action is set to na.omit, however envfit cannot deal with
 missing values, therefore if metadata are provided, they should be free of missing values.</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>seqPCoA</span>(<span class='no'>abundances</span>, <span class='kw'>reference</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>rarefyRef</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>addToRefStepwise</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>refName</span> <span class='kw'>=</span> <span class='st'>"ref"</span>, <span class='kw'>metadata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>groupAttrib</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>groups</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>groupColors</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>colors</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
-  <span class='kw'>clusters</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>sizes</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>size.legend</span> <span class='kw'>=</span> <span class='st'>""</span>,
-  <span class='kw'>time</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>hiddenSamples</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>dis</span> <span class='kw'>=</span> <span class='st'>"bray"</span>, <span class='kw'>rda</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>doScree</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>topTaxa</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>topMetadata</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>arrowFactor</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>metadataFactor</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>centroidFactor</span> <span class='kw'>=</span> <span class='fl'>1</span>,
-  <span class='kw'>taxonColor</span> <span class='kw'>=</span> <span class='st'>"brown"</span>, <span class='kw'>metadataColor</span> <span class='kw'>=</span> <span class='st'>"blue"</span>, <span class='kw'>drawEllipse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>clusterQualityIndex</span> <span class='kw'>=</span> <span class='st'>"CH"</span>, <span class='kw'>groupDispersion</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>ylim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>permut</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>env.permut</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>pAdjMethod</span> <span class='kw'>=</span> <span class='st'>"BH"</span>,
-  <span class='kw'>qvalThreshold</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>ellipseConf</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='kw'>dimensions</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>),
-  <span class='no'>...</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>seqPCoA</span>(
+  <span class='no'>abundances</span>,
+  <span class='kw'>reference</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>rarefyRef</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>addToRefStepwise</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>refName</span> <span class='kw'>=</span> <span class='st'>"ref"</span>,
+  <span class='kw'>metadata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>groupAttrib</span> <span class='kw'>=</span> <span class='st'>""</span>,
+  <span class='kw'>groups</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>groupColors</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>colors</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>clusters</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>labels</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>sizes</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>size.legend</span> <span class='kw'>=</span> <span class='st'>""</span>,
+  <span class='kw'>time</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>hiddenTaxa</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>hiddenSamples</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>dis</span> <span class='kw'>=</span> <span class='st'>"bray"</span>,
+  <span class='kw'>rda</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>doScree</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>topTaxa</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>topMetadata</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>arrowFactor</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>metadataFactor</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>centroidFactor</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>taxonColor</span> <span class='kw'>=</span> <span class='st'>"brown"</span>,
+  <span class='kw'>metadataColor</span> <span class='kw'>=</span> <span class='st'>"blue"</span>,
+  <span class='kw'>hideGroupLegend</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>drawEllipse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>ellipseOnClusters</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>ellipseColorMap</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>clusterQualityIndex</span> <span class='kw'>=</span> <span class='st'>"silhouette"</span>,
+  <span class='kw'>groupDispersion</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>ylim</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>permut</span> <span class='kw'>=</span> <span class='fl'>1000</span>,
+  <span class='kw'>env.permut</span> <span class='kw'>=</span> <span class='fl'>1000</span>,
+  <span class='kw'>pAdjMethod</span> <span class='kw'>=</span> <span class='st'>"BH"</span>,
+  <span class='kw'>qvalThreshold</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
+  <span class='kw'>ellipseConf</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='kw'>dimensions</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>2</span>),
+  <span class='no'>...</span>
+)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -175,11 +211,11 @@ missing values, therefore if metadata are provided, they should be free of missi
     </tr>
     <tr>
       <th>groupColors</th>
-      <td><p>an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent</p></td>
+      <td><p>an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent</p></td>
     </tr>
     <tr>
       <th>colors</th>
-      <td><p>an optional vector of colors to be used to color samples; it overrides groupColors if provided</p></td>
+      <td><p>an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided</p></td>
     </tr>
     <tr>
       <th>clusters</th>
@@ -200,6 +236,10 @@ missing values, therefore if metadata are provided, they should be free of missi
     <tr>
       <th>time</th>
       <td><p>an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)</p></td>
+    </tr>
+    <tr>
+      <th>hiddenTaxa</th>
+      <td><p>an optional vector with names of taxa to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed among top co-varying taxa)</p></td>
     </tr>
     <tr>
       <th>hiddenSamples</th>
@@ -250,12 +290,24 @@ missing values, therefore if metadata are provided, they should be free of missi
       <td><p>the color of the metadata arrows and text</p></td>
     </tr>
     <tr>
+      <th>hideGroupLegend</th>
+      <td><p>do not show the group legend</p></td>
+    </tr>
+    <tr>
       <th>drawEllipse</th>
       <td><p>if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)</p></td>
     </tr>
     <tr>
+      <th>ellipseOnClusters</th>
+      <td><p>draw ellipse around cluster members (indicated by shape) instead of group members (indicated by color)</p></td>
+    </tr>
+    <tr>
+      <th>ellipseColorMap</th>
+      <td><p>color ellipses according to this color list; entries have to be group names or, if ellipseOnClusters is true, cluster names; overrides groupColors for ellipses</p></td>
+    </tr>
+    <tr>
       <th>clusterQualityIndex</th>
-      <td><p>if groups or groupAttrib given, report cluster quality according to any criterium supported by package clusterCrit (default: Calinski Harabasz, set to none to disable computation of cluster quality)</p></td>
+      <td><p>if groups or groupAttrib given, report cluster quality according to silhouette function or any criterium supported by package clusterCrit (default: silhouette, set to none to disable computation of cluster quality)</p></td>
     </tr>
     <tr>
       <th>groupDispersion</th>
@@ -298,7 +350,7 @@ missing values, therefore if metadata are provided, they should be free of missi
       <td><p>Additional arguments passed to plot()</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>When a reference and groups are provided and the number of group memberships does not equal the number of samples in the combined abundance table,
@@ -321,7 +373,6 @@ enabling groupDispersion.
 In addition, if groups are provided, seqPCoA computes cluster quality indices to assess group separation with package clusterCrit.
 Concerning interpretation of cluster quality indices: The silhouette index ranges between -1 and 1, a large Dunn's, Silhouette or Calinski-Harabasz index and a small
 Davies-Bouldin or C-index indicate well-defined clusters, respectively.</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"ibd_taxa"</span>)
@@ -335,8 +386,8 @@ Davies-Bouldin or C-index indicate well-defined clusters, respectively.</p>
 #&gt; [1] "Metadata mesalamine is binary"
 #&gt; [1] "Metadata steroids is binary"</div><div class='input'><span class='fu'>seqPCoA</span>(<span class='no'>ibd_taxa</span>,<span class='kw'>groups</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/vector.html'>as.vector</a></span>(<span class='no'>ibd_metadata</span>$<span class='no'>Diagnosis</span>),<span class='kw'>topTaxa</span><span class='kw'>=</span><span class='fl'>30</span>, <span class='kw'>drawEllipse</span><span class='kw'>=</span><span class='fl'>TRUE</span>)</div><div class='img'><img src='seqPCoA-1.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Adonis to test for significant difference in group compositions"
 #&gt; [1] "Adonis R2: 0.0604, p-value: 0.001"
-#&gt; [1] "Cluster quality index Calinski_Harabasz"
-#&gt; [1] 2.304452
+#&gt; [1] "Cluster quality index silhouette"
+#&gt; [1] -0.02240243
 #&gt; [1] "Among the top 30 covarying taxa, 2 are significant."
 #&gt; [1] "Subdoligranulum_unclassified"
 #&gt; [1] "Escherichia_unclassified"</div><div class='input'><span class='co'># remove 65 samples with missing calprotectin measurements or other missing values in the metadata</span>
@@ -350,23 +401,18 @@ Davies-Bouldin or C-index indicate well-defined clusters, respectively.</p>
 #&gt; [1] "Diagnosis"
 #&gt; [1] "antibiotic"
 #&gt; [1] "immunosuppressant"
-#&gt; [1] "steroids"</div><div class='img'><img src='seqPCoA-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Cluster quality index Calinski_Harabasz"
-#&gt; [1] 1.796474
-#&gt; [1] "Among the top 30 covarying taxa, 3 are significant."
+#&gt; [1] "steroids"</div><div class='img'><img src='seqPCoA-2.png' alt='' width='700' height='433' /></div><div class='output co'>#&gt; [1] "Cluster quality index silhouette"
+#&gt; [1] -0.01835481
+#&gt; [1] "Among the top 30 covarying taxa, 4 are significant."
 #&gt; [1] "Faecalibacterium_prausnitzii"
 #&gt; [1] "Ruminococcus_bromii"
+#&gt; [1] "Streptococcus_thermophilus"
 #&gt; [1] "Bacteroides_uniformis"</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#details">Details</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -377,7 +423,7 @@ Davies-Bouldin or C-index indicate well-defined clusters, respectively.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.0.</p>
 </div>
 
       </footer>

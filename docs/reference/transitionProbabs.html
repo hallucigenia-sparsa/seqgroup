@@ -8,23 +8,29 @@
 
 <title>Compute transition probabilities between clusters — transitionProbabs • seqgroup</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -32,8 +38,8 @@
 
 
 
-<meta property="og:title" content="Compute transition probabilities between clusters — transitionProbabs" />
 
+<meta property="og:title" content="Compute transition probabilities between clusters — transitionProbabs" />
 <meta property="og:description" content="The cluster vector assigns to each
 sample its cluster membership. If
 samples are in temporal order,
@@ -46,6 +52,11 @@ collected for several related experiments
 (e.g. study participants). The order of samples
 in the cluster and group membership vectors is
 supposed to be the same.
+If logodds is true, the log ratio between the observed and
+expected transition probability is computed, where the latter
+is the product of the prior probabilities for the two clusters. A log
+ratio above 1 or below -1 means that observed transition probabilities are
+greater or smaller than expected at random.
 If a binary metadata item is provided, the function
 counts how often transitions occur within a sliding window
 with and without a metadata change. In this case, two matrices are
@@ -56,7 +67,7 @@ transitions are not counted.
 Note that within the window, temporal order between
 metadata and cluster change is not enforced (so the
 cluster may change before the metadata changes)." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -73,7 +84,7 @@ cluster may change before the metadata changes)." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -115,7 +126,6 @@ cluster may change before the metadata changes)." />
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -137,7 +147,6 @@ cluster may change before the metadata changes)." />
     </div>
 
     <div class="ref-description">
-    
     <p>The cluster vector assigns to each
 sample its cluster membership. If
 samples are in temporal order,
@@ -150,6 +159,11 @@ collected for several related experiments
 (e.g. study participants). The order of samples
 in the cluster and group membership vectors is
 supposed to be the same.
+If logodds is true, the log ratio between the observed and
+expected transition probability is computed, where the latter
+is the product of the prior probabilities for the two clusters. A log
+ratio above 1 or below -1 means that observed transition probabilities are
+greater or smaller than expected at random.
 If a binary metadata item is provided, the function
 counts how often transitions occur within a sliding window
 with and without a metadata change. In this case, two matrices are
@@ -160,12 +174,17 @@ transitions are not counted.
 Note that within the window, temporal order between
 metadata and cluster change is not enforced (so the
 cluster may change before the metadata changes).</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>transitionProbabs</span>(<span class='kw'>clus.vec</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>groups</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(), <span class='kw'>metadata.vec</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
-  <span class='kw'>windowSize</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>freq</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>transitionProbabs</span>(
+  <span class='kw'>clus.vec</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>groups</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>metadata.vec</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(),
+  <span class='kw'>windowSize</span> <span class='kw'>=</span> <span class='fl'>4</span>,
+  <span class='kw'>freq</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>logodds</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -189,12 +208,15 @@ cluster may change before the metadata changes).</p>
       <th>freq</th>
       <td><p>if true, transition frequencies instead of probabilities are returned (for metadata.vec, always true)</p></td>
     </tr>
+    <tr>
+      <th>logodds</th>
+      <td><p>if true, compute logarithm of the ratio of the observed and the expected transition probability</p></td>
+    </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>a matrix or, if metadata.vec provided, a list with 2 matrices, the first without metadata change and the second with metadata change</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'># generate random cluster memberships</span>
@@ -205,18 +227,12 @@ cluster may change before the metadata changes).</p>
 <span class='co'># plot graph with transition probabilities as edge thickness</span>
 <span class='no'>edge.weights</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/vector.html'>as.vector</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/t.html'>t</a></span>(<span class='no'>trans.mat</span>))
 <span class='no'>edge.weights</span><span class='kw'>=</span><span class='no'>edge.weights</span>[<span class='no'>edge.weights</span><span class='kw'>&gt;</span><span class='fl'>0</span>]
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>gr</span>,<span class='kw'>edge.width</span><span class='kw'>=</span><span class='no'>edge.weights</span>) <span class='co'># edge weights may need to be scaled</span></div><div class='img'><img src='transitionProbabs-1.png' alt='' width='700' height='433' /></div></pre>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>gr</span>,<span class='kw'>edge.width</span><span class='kw'>=</span><span class='no'>edge.weights</span>*<span class='fl'>10</span>) <span class='co'># 10 is a factor to scale edge weights, may have to be adjusted</span></div><div class='img'><img src='transitionProbabs-1.png' alt='' width='700' height='433' /></div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -227,7 +243,7 @@ cluster may change before the metadata changes).</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.0.</p>
 </div>
 
       </footer>

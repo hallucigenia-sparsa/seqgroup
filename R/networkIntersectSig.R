@@ -4,7 +4,8 @@
 #' Each random network is built by randomly sampling from the total number of possible edges.
 #' The p-value is computed parameter-free by counting the number of times the intersection size of
 #' random networks is smaller than the intersection size in the observed networks and dividing it
-#' by the number of iterations.
+#' by the number of iterations. Please see \href{https://github.com/ramellose/anuran}{https://github.com/ramellose/anuran}
+#' for a dedicated tool that assesses the significance of network intersections.
 #'
 #' @param rep.num number of inferred networks
 #' @param taxon.num number of taxa in the matrix

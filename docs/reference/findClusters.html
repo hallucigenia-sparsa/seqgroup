@@ -8,23 +8,29 @@
 
 <title>Cluster taxon- or sample-wise — findClusters • seqgroup</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -32,8 +38,8 @@
 
 
 
-<meta property="og:title" content="Cluster taxon- or sample-wise — findClusters" />
 
+<meta property="og:title" content="Cluster taxon- or sample-wise — findClusters" />
 <meta property="og:description" content="Cluster sequencing data taxon- or sample-wise.
 By default, data are clustered sample-wise. The default method is
 Dirichlet-Multinomial mixtures (DMM) using the DirichletMultinomial package.
@@ -44,8 +50,8 @@ they will be scaled (divided by a constant and rounded). In addition, for DMM, t
 of counts should be the same across samples.
 Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
 The cluster number can be omitted, in which case the best cluster number is determined in the range
-provided using a cluster quality index implemented in clusterCrit's function intCriteria." />
-<meta name="twitter:card" content="summary" />
+provided using either silhouette or a cluster quality index implemented in clusterCrit's function intCriteria." />
+
 
 
 
@@ -62,7 +68,7 @@ provided using a cluster quality index implemented in clusterCrit's function int
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -104,7 +110,6 @@ provided using a cluster quality index implemented in clusterCrit's function int
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -126,7 +131,6 @@ provided using a cluster quality index implemented in clusterCrit's function int
     </div>
 
     <div class="ref-description">
-    
     <p>Cluster sequencing data taxon- or sample-wise.
 By default, data are clustered sample-wise. The default method is
 Dirichlet-Multinomial mixtures (DMM) using the DirichletMultinomial package.
@@ -137,13 +141,18 @@ they will be scaled (divided by a constant and rounded). In addition, for DMM, t
 of counts should be the same across samples.
 Partitioning around medoids (PAM) does not expect counts, can deal with absent taxa and large counts.
 The cluster number can be omitted, in which case the best cluster number is determined in the range
-provided using a cluster quality index implemented in clusterCrit's function intCriteria.</p>
-    
+provided using either silhouette or a cluster quality index implemented in clusterCrit's function intCriteria.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>findClusters</span>(<span class='no'>abundances</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"dmm"</span>, <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>minK</span> <span class='kw'>=</span> <span class='fl'>2</span>,
-  <span class='kw'>maxK</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>qualityIndex</span> <span class='kw'>=</span> <span class='st'>"CH"</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>findClusters</span>(
+  <span class='no'>abundances</span>,
+  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"dmm"</span>,
+  <span class='kw'>k</span> <span class='kw'>=</span> <span class='fl'>3</span>,
+  <span class='kw'>minK</span> <span class='kw'>=</span> <span class='fl'>2</span>,
+  <span class='kw'>maxK</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>qualityIndex</span> <span class='kw'>=</span> <span class='st'>"silhouette"</span>
+)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -169,114 +178,34 @@ provided using a cluster quality index implemented in clusterCrit's function int
     </tr>
     <tr>
       <th>qualityIndex</th>
-      <td><p>CH (Calinski_Harabasz), Dunn, Silhouette and other quality indices supported by clusterCrit's intCriteria function</p></td>
+      <td><p>by default silhouette computed with silhouette function on bray curtis, can also be CH, Dunn, and other quality indices supported by clusterCrit's intCriteria function or none</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>a cluster membership vector</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"ibd_taxa"</span>)
 <span class='co'># unequal sample sums in the example data set are due to the removal of low-prevalence taxa</span>
-<span class='no'>clusters</span><span class='kw'>=</span><span class='fu'>findClusters</span>(<span class='no'>ibd_taxa</span>,<span class='kw'>k</span><span class='kw'>=</span><span class='fl'>NA</span>,<span class='kw'>maxK</span><span class='kw'>=</span><span class='fl'>6</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: The total counts across samples are not the same. DMM may be biased.</span></div><div class='output co'>#&gt; <span class='warning'>Warning: DMM does not accept taxa with no occurrence across samples. These have been removed.</span></div><div class='output co'>#&gt; <span class='warning'>Warning: DMM only accepts counts, thus abundances have been scaled to counts.</span></div><div class='output co'>#&gt; [1] "Abundances have been scaled with factor: 10000"</div><div class='output co'>#&gt; <span class='message'>dmn, k=2</span></div><div class='output co'>#&gt;   Soft kmeans
-#&gt;     iteration 10 change 0.001195
-#&gt;     iteration 20 change 0.000354
-#&gt;     iteration 30 change 0.000147
-#&gt;     iteration 40 change 0.000063
-#&gt;     iteration 50 change 0.000026
-#&gt;     iteration 60 change 0.000011
-#&gt;     iteration 70 change 0.000005
-#&gt;     iteration 80 change 0.000002
-#&gt;   Expectation Maximization setup
-#&gt;   Expectation Maximization
-#&gt;     iteration 10 change 1.714182
-#&gt;   Hessian
-#&gt; [1] "DMM goodness of fit:"
-#&gt;        NLE     LogDet    Laplace        BIC        AIC 
-#&gt; 62140.2542   917.1129 62239.5057 63126.2438 62531.2542 </div><div class='output co'>#&gt; <span class='message'>dmn, k=3</span></div><div class='output co'>#&gt;   Soft kmeans
-#&gt;     iteration 10 change 0.021520
-#&gt;     iteration 20 change 0.004182
-#&gt;     iteration 30 change 0.001771
-#&gt;     iteration 40 change 0.001530
-#&gt;     iteration 50 change 0.000461
-#&gt;     iteration 60 change 0.000086
-#&gt;     iteration 70 change 0.000015
-#&gt;     iteration 80 change 0.000003
-#&gt;   Expectation Maximization setup
-#&gt;   Expectation Maximization
-#&gt;     iteration 10 change 0.040595
-#&gt;   Hessian
-#&gt; [1] "DMM goodness of fit:"
-#&gt;       NLE    LogDet   Laplace       BIC       AIC 
-#&gt; 61977.761  1023.812 61950.250 63458.006 62564.761 </div><div class='output co'>#&gt; <span class='message'>dmn, k=4</span></div><div class='output co'>#&gt;   Soft kmeans
-#&gt;     iteration 10 change 0.010407
-#&gt;     iteration 20 change 0.002608
-#&gt;     iteration 30 change 0.004666
-#&gt;     iteration 40 change 0.003470
-#&gt;     iteration 50 change 0.001623
-#&gt;     iteration 60 change 0.000698
-#&gt;     iteration 70 change 0.000338
-#&gt;     iteration 80 change 0.000131
-#&gt;     iteration 90 change 0.000046
-#&gt;     iteration 100 change 0.000016
-#&gt;     iteration 110 change 0.000006
-#&gt;     iteration 120 change 0.000002
-#&gt;   Expectation Maximization setup
-#&gt;   Expectation Maximization
-#&gt;     iteration 10 change 20.125851
-#&gt;     iteration 20 change 11.762338
-#&gt;     iteration 30 change 0.000000
-#&gt;   Hessian
-#&gt; [1] "DMM goodness of fit:"
-#&gt;        NLE     LogDet    Laplace        BIC        AIC 
-#&gt; 62262.6419   996.8317 62041.5288 64237.1428 63045.6419 </div><div class='output co'>#&gt; <span class='message'>dmn, k=5</span></div><div class='output co'>#&gt;   Soft kmeans
-#&gt;     iteration 10 change 0.080885
-#&gt;     iteration 20 change 0.003888
-#&gt;     iteration 30 change 0.000679
-#&gt;     iteration 40 change 0.000096
-#&gt;     iteration 50 change 0.000011
-#&gt;     iteration 60 change 0.000001
-#&gt;   Expectation Maximization setup
-#&gt;   Expectation Maximization
-#&gt;     iteration 10 change 7.298210
-#&gt;     iteration 20 change 0.000000
-#&gt;   Hessian
-#&gt; [1] "DMM goodness of fit:"
-#&gt;       NLE    LogDet   Laplace       BIC       AIC 
-#&gt; 62673.551  1136.577 62342.199 65142.308 63652.551 </div><div class='output co'>#&gt; <span class='message'>dmn, k=6</span></div><div class='output co'>#&gt;   Soft kmeans
-#&gt;     iteration 10 change 0.006955
-#&gt;     iteration 20 change 0.017319
-#&gt;     iteration 30 change 0.007230
-#&gt;     iteration 40 change 0.000367
-#&gt;     iteration 50 change 0.000093
-#&gt;     iteration 60 change 0.000023
-#&gt;     iteration 70 change 0.000006
-#&gt;     iteration 80 change 0.000001
-#&gt;   Expectation Maximization setup
-#&gt;   Expectation Maximization
-#&gt;     iteration 10 change 2.542535
-#&gt;     iteration 20 change 0.000003
-#&gt;   Hessian
-#&gt; [1] "DMM goodness of fit:"
-#&gt;       NLE    LogDet   Laplace       BIC       AIC 
-#&gt; 62939.437  1110.933 62415.150 65902.449 64114.437 
-#&gt; [1] "The optimal cluster number according to Calinski_Harabasz is 2 with value 7.30791430598713"</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>clusters</span>)</div><div class='output co'>#&gt; clusters
-#&gt;  1  2 
-#&gt; 95 60 </div></pre>
+<span class='no'>clusters</span><span class='kw'>=</span><span class='fu'>findClusters</span>(<span class='no'>ibd_taxa</span>, <span class='kw'>k</span><span class='kw'>=</span><span class='fl'>NA</span>, <span class='kw'>method</span><span class='kw'>=</span><span class='st'>"pam"</span>, <span class='kw'>qualityIndex</span><span class='kw'>=</span><span class='st'>"CH"</span>)</div><div class='output co'>#&gt; [1] "k equal 2 has quality value 16.0904817118765"
+#&gt; [1] "k equal 3 has quality value 15.6880504982704"
+#&gt; [1] "k equal 4 has quality value 12.8737754811385"
+#&gt; [1] "k equal 5 has quality value 13.7168831544949"
+#&gt; [1] "k equal 6 has quality value 13.9996390736813"
+#&gt; [1] "k equal 7 has quality value 14.0650955457399"
+#&gt; [1] "k equal 8 has quality value 13.7596433029095"
+#&gt; [1] "k equal 9 has quality value 13.7172891077008"
+#&gt; [1] "k equal 10 has quality value 13.65667748236"
+#&gt; [1] "The optimal cluster number according to Calinski_Harabasz is 2 with value 16.0904817118765"</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>clusters</span>)</div><div class='output co'>#&gt; clusters
+#&gt;   1   2 
+#&gt; 147   8 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -287,7 +216,7 @@ provided using a cluster quality index implemented in clusterCrit's function int
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.0.</p>
 </div>
 
       </footer>

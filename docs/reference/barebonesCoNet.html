@@ -8,23 +8,29 @@
 
 <title>Barebones R implementation of CoNet — barebonesCoNet • seqgroup</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -32,13 +38,13 @@
 
 
 
-<meta property="og:title" content="Barebones R implementation of CoNet — barebonesCoNet" />
 
-<meta property="og:description" content="Build a network using Pearson, Spearman, Kullback-Leibler and/or Bray-Curtis.
+<meta property="og:title" content="Barebones R implementation of CoNet — barebonesCoNet" />
+<meta property="og:description" content="Build a network using Pearson, Spearman, Euclidean, Kullback-Leibler and/or Bray-Curtis.
 The original CoNet implementation with extended functionality is available at: http://systemsbiology.vub.ac.be/conet.
 For export of data to the original CoNet, see exportToCoNet, for a generic network building function wrapping
 barebonesCoNet and other network inference methods, see buildNetwork." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -55,7 +61,7 @@ barebonesCoNet and other network inference methods, see buildNetwork." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -97,7 +103,6 @@ barebonesCoNet and other network inference methods, see buildNetwork." />
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -119,22 +124,38 @@ barebonesCoNet and other network inference methods, see buildNetwork." />
     </div>
 
     <div class="ref-description">
-    
-    <p>Build a network using Pearson, Spearman, Kullback-Leibler and/or Bray-Curtis.
+    <p>Build a network using Pearson, Spearman, Euclidean, Kullback-Leibler and/or Bray-Curtis.
 The original CoNet implementation with extended functionality is available at: <a href='http://psbweb05.psb.ugent.be/conet/'>http://systemsbiology.vub.ac.be/conet</a>.
 For export of data to the original CoNet, see <code><a href='exportToCoNet.html'>exportToCoNet</a></code>, for a generic network building function wrapping
 barebonesCoNet and other network inference methods, see <code><a href='buildNetwork.html'>buildNetwork</a></code>.</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>barebonesCoNet</span>(<span class='no'>abundances</span>, <span class='kw'>metadata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>methods</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"spearman"</span>,
-  <span class='st'>"kld"</span>), <span class='kw'>T.up</span> <span class='kw'>=</span> <span class='fl'>NA</span>, <span class='kw'>T.down</span> <span class='kw'>=</span> <span class='fl'>NA</span>, <span class='kw'>method.num.T</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>pval.T</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
-  <span class='kw'>init.edge.num</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>2</span>, <span class='fu'><a href='https://rdrr.io/r/base/Round.html'>round</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/MathFun.html'>sqrt</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>abundances</span>)))), <span class='kw'>min.occ</span> <span class='kw'>=</span> <span class='fl'>0</span>,
-  <span class='kw'>keep.filtered</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>norm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>stand.rows</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>pval.cor</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>permut</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>renorm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>permutandboot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>iters</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>bh</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>pseudocount</span> <span class='kw'>=</span> <span class='fl'>1e-11</span>, <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>barebonesCoNet</span>(
+  <span class='no'>abundances</span>,
+  <span class='kw'>metadata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>methods</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"spearman"</span>, <span class='st'>"kld"</span>),
+  <span class='kw'>T.up</span> <span class='kw'>=</span> <span class='fl'>NA</span>,
+  <span class='kw'>T.down</span> <span class='kw'>=</span> <span class='fl'>NA</span>,
+  <span class='kw'>method.num.T</span> <span class='kw'>=</span> <span class='fl'>2</span>,
+  <span class='kw'>pval.T</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
+  <span class='kw'>init.edge.num</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>2</span>, <span class='fu'><a href='https://rdrr.io/r/base/Round.html'>round</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/MathFun.html'>sqrt</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>abundances</span>)))),
+  <span class='kw'>min.occ</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Round.html'>round</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>abundances</span>)/<span class='fl'>3</span>),
+  <span class='kw'>keep.filtered</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>norm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>stand.rows</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>clr</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>pval.cor</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>permut</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>columnwise</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>renorm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>permutandboot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>iters</span> <span class='kw'>=</span> <span class='fl'>100</span>,
+  <span class='kw'>bh</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>pseudocount</span> <span class='kw'>=</span> <span class='fl'>1e-11</span>,
+  <span class='kw'>plot</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>verbose</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -148,15 +169,15 @@ barebonesCoNet and other network inference methods, see <code><a href='buildNetw
     </tr>
     <tr>
       <th>methods</th>
-      <td><p>network construction methods, values can be combinations of: "pearson", "spearman", "kld" or "bray"</p></td>
+      <td><p>network construction methods, values can be combinations of: "pearson", "spearman", "kld", "euclid" or "bray"; note that the latter two are not defined for negative abundance values</p></td>
     </tr>
     <tr>
       <th>T.up</th>
-      <td><p>upper threshold for scores (when more than one network construction method is provided, T.up is ignored)</p></td>
+      <td><p>upper threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.up is ignored)</p></td>
     </tr>
     <tr>
       <th>T.down</th>
-      <td><p>lower threshold for scores (when more than one network construction method is provided, T.down is ignored)</p></td>
+      <td><p>lower threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.down is ignored)</p></td>
     </tr>
     <tr>
       <th>method.num.T</th>
@@ -164,7 +185,7 @@ barebonesCoNet and other network inference methods, see <code><a href='buildNetw
     </tr>
     <tr>
       <th>pval.T</th>
-      <td><p>threshold on p-value (only used when permut is true); if several methods are provided, only applied after merge</p></td>
+      <td><p>threshold on p-value (only used when permut, permutandboot or pval.cor is true); if several methods are provided, only applied after merge</p></td>
     </tr>
     <tr>
       <th>init.edge.num</th>
@@ -187,16 +208,24 @@ barebonesCoNet and other network inference methods, see <code><a href='buildNetw
       <td><p>standardize rows by dividing each entry by its corresponding row sum, applied after normalization</p></td>
     </tr>
     <tr>
+      <th>clr</th>
+      <td><p>apply CLR transform (after filtering and normalization); if true, stand.rows is ignored and keep.filtered is set to true; pseudocount is ignored for clr (<code><a href='clr.html'>clr</a></code> with omit.zeros true)</p></td>
+    </tr>
+    <tr>
       <th>pval.cor</th>
-      <td><p>compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and/or permutandboot with or without renorm)</p></td>
+      <td><p>compute p-values of correlations with cor.test (only valid for correlations; takes precedence over permut and permutandboot with or without renorm)</p></td>
     </tr>
     <tr>
       <th>permut</th>
-      <td><p>compute p-values on edges with a permutation test</p></td>
+      <td><p>compute edge-specific p-values with a permutation test</p></td>
+    </tr>
+    <tr>
+      <th>columnwise</th>
+      <td><p>permute columns instead of rows for the permutation test</p></td>
     </tr>
     <tr>
       <th>renorm</th>
-      <td><p>compute p-values with a permutation test, using renormalization (only applied to correlations)</p></td>
+      <td><p>use renormalization when computing permutation distribution (only applied to correlations; cannot be combined with metadata)</p></td>
     </tr>
     <tr>
       <th>permutandboot</th>
@@ -204,7 +233,7 @@ barebonesCoNet and other network inference methods, see <code><a href='buildNetw
     </tr>
     <tr>
       <th>iters</th>
-      <td><p>number of iterations for the permutation test</p></td>
+      <td><p>number of iterations for the permutation and bootstrap distributions</p></td>
     </tr>
     <tr>
       <th>bh</th>
@@ -216,76 +245,77 @@ barebonesCoNet and other network inference methods, see <code><a href='buildNetw
     </tr>
     <tr>
       <th>plot</th>
-      <td><p>plot score or, if permut or pval.cor is true, p-value distribution</p></td>
+      <td><p>plot score or, if permut, permutandboot or pval.cor is true, p-value distribution, in both cases after thresholding</p></td>
     </tr>
     <tr>
       <th>verbose</th>
-      <td><p>print the number of positive and negative edges and, if permut is true, details of p-value computation</p></td>
+      <td><p>print the number of positive and negative edges and, if permut, permutandboot or pval.cor is true, details of p-value computation</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>igraph object with absolute association strengths, number of supporting methods or, if permut or pval.cor is true, significances (-1*log10(pval)) as edge weights</p>
-    
+    <p>igraph object with edge weights being either association strengths (single method), the number of supporting methods or, if permut, permutandboot or pval.cor is true, significances (-1*log10(pval))</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>If renorm and permutandboot are both set to TRUE, p-value computation is equal to the ReBoot procedure implemented
 in CoNet. If more than one method is selected and p-value computation is enabled, p-values are merged with Fisher's method, multiple
 testing correction (if enabled) is applied on the merged p-value and the merged p-value is reported. If p-value computation is not enabled,
-the method number is reported as association strength. Note that for a single dissimilarity method, weights are scaled to the absolute distance
-from the mean value (for bounded Bray Curtis, this is 0.5 and for KLD, this is the mean of the observed scores), such that a larger edge weight
-means a stronger association.
+the method number is reported as association strength.
 Edge signs (co-presence/mutual exclusion) are assigned using thresholds (T.up/T.down directly or indirectly via top/bottom initial edge number).
 Co-presence (high correlation/low dissimilarity) is encoded in green, mutual exclusion (low correlation/high dissimilarity) in red and sign conflicts
 (lack of agreement between methods) in gray.
 When metadata are provided, a bipartite network is computed. To circumvent bipartite network computation, metadata can be appended to abundances to form a single
-input matrix, but in this case, preprocessing on abundance data needs to be carried out before.</p>
-    
+input matrix, but in this case, preprocessing on abundance data needs to be carried out before.
+When CLR transform is applied, the Euclidean distance is the recommended measure, which according to Gloor et al. (<a href='https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full'>https://www.frontiersin.org/articles/10.3389/fmicb.2017.02224/full</a>)
+is equivalent to the Aitchison distance after CLR.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"ibd_taxa"</span>)
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='st'>"ibd_lineages"</span>)
-<span class='no'>ibd_genera</span><span class='kw'>=</span><span class='fu'><a href='aggregateTaxa.html'>aggregateTaxa</a></span>(<span class='no'>ibd_taxa</span>,<span class='kw'>lineages</span> <span class='kw'>=</span> <span class='no'>ibd_lineages</span>,<span class='kw'>taxon.level</span> <span class='kw'>=</span> <span class='st'>"genus"</span>)</div><div class='output co'>#&gt; [1] "Number of higher-level taxa: 71"</div><div class='input'><span class='no'>min.occ</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>ibd_genera</span>)/<span class='fl'>3</span>
-<span class='co'># p-values for the 50 strongest positive and 50 strongest negative Spearman correlations</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'>barebonesCoNet</span>(<span class='no'>ibd_genera</span>,<span class='kw'>methods</span><span class='kw'>=</span><span class='st'>"spearman"</span>,<span class='kw'>init.edge.num</span><span class='kw'>=</span><span class='fl'>50</span>,<span class='kw'>min.occ</span><span class='kw'>=</span><span class='no'>min.occ</span>,<span class='kw'>pval.cor</span><span class='kw'>=</span><span class='fl'>TRUE</span>))</div><div class='output co'>#&gt; [1] "Network construction with method(s): spearman"
+<span class='no'>ibd_genera</span><span class='kw'>=</span><span class='fu'><a href='aggregateTaxa.html'>aggregateTaxa</a></span>(<span class='no'>ibd_taxa</span>,<span class='kw'>lineages</span> <span class='kw'>=</span> <span class='no'>ibd_lineages</span>,<span class='kw'>taxon.level</span> <span class='kw'>=</span> <span class='st'>"genus"</span>)</div><div class='output co'>#&gt; [1] "Number of higher-level taxa: 71"
+#&gt; [1] 71  7</div><div class='input'><span class='co'># only keep significant ones among the top 50 positive and negative Spearman correlations</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'>barebonesCoNet</span>(<span class='no'>ibd_genera</span>,<span class='kw'>methods</span><span class='kw'>=</span><span class='st'>"spearman"</span>,<span class='kw'>init.edge.num</span><span class='kw'>=</span><span class='fl'>50</span>,<span class='kw'>permutandboot</span><span class='kw'>=</span><span class='fl'>TRUE</span>))</div><div class='output co'>#&gt; [1] "Network construction with method(s): spearman"
 #&gt; [1] "Processing method spearman"
-#&gt; [1] "Lower threshold for initial edge number (50): -0.289093084514899"
-#&gt; [1] "Upper threshold for initial edge number (50): 0.477834957643167"
+#&gt; [1] "Lower threshold for initial edge number (50): -0.269082821758457"
+#&gt; [1] "Upper threshold for initial edge number (50): 0.476873894000414"
 #&gt; [1] "Renormalisation is FALSE"
-#&gt; [1] "P-values of correlations are computed with cor.test TRUE"
-#&gt; [1] "Permutations and bootstraps are both computed FALSE"</div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Cannot compute exact p-value with ties</span></div><div class='output co'>#&gt; [1] "Associations computed for 55 taxa."
-#&gt; [1] "Network has 99 edges."</div><div class='img'><img src='barebonesCoNet-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># combine Bray Curtis and Spearman without computing p-values</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'>barebonesCoNet</span>(<span class='no'>ibd_genera</span>,<span class='kw'>methods</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"spearman"</span>,<span class='st'>"bray"</span>),<span class='kw'>init.edge.num</span><span class='kw'>=</span><span class='fl'>50</span>,<span class='kw'>min.occ</span> <span class='kw'>=</span> <span class='no'>min.occ</span>))</div><div class='output co'>#&gt; [1] "Network construction with method(s): spearman, bray"
+#&gt; [1] "P-values of correlations are computed with cor.test FALSE"
+#&gt; [1] "Permutations and bootstraps are both computed TRUE"
+#&gt; [1] "Associations computed for 46 taxa."
+#&gt; [1] "Network has 99 edges."</div><div class='img'><img src='barebonesCoNet-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># only keep edges supported by both Bray Curtis and Spearman</span>
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'>barebonesCoNet</span>(<span class='no'>ibd_genera</span>,<span class='kw'>methods</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"spearman"</span>,<span class='st'>"bray"</span>),<span class='kw'>init.edge.num</span><span class='kw'>=</span><span class='fl'>50</span>))</div><div class='output co'>#&gt; [1] "Network construction with method(s): spearman, bray"
 #&gt; [1] "Upper and lower threshold are ignored when more than one method is selected."
 #&gt; [1] "Processing method spearman"
-#&gt; [1] "Lower threshold for initial edge number (50): -0.289093084514899"
-#&gt; [1] "Upper threshold for initial edge number (50): 0.477834957643167"
+#&gt; [1] "Lower threshold for initial edge number (50): -0.269082821758457"
+#&gt; [1] "Upper threshold for initial edge number (50): 0.476873894000414"
 #&gt; [1] "Renormalisation is FALSE"
 #&gt; [1] "P-values of correlations are computed with cor.test FALSE"
 #&gt; [1] "Permutations and bootstraps are both computed FALSE"
 #&gt; [1] "Processing method bray"
-#&gt; [1] "Lower threshold for initial edge number (50): 0.668982033559373"
-#&gt; [1] "Upper threshold for initial edge number (50): 0.995722270123443"
+#&gt; [1] "Lower threshold for initial edge number (50): 0.665322882108127"
+#&gt; [1] "Upper threshold for initial edge number (50): 0.991535912658058"
 #&gt; [1] "Renormalisation is FALSE"
 #&gt; [1] "P-values of correlations are computed with cor.test FALSE"
 #&gt; [1] "Permutations and bootstraps are both computed FALSE"
-#&gt; [1] "Associations computed for 55 taxa."
+#&gt; [1] "Associations computed for 46 taxa."
 #&gt; [1] "Merging methods..."
-#&gt; [1] "Network has 16 edges."</div><div class='img'><img src='barebonesCoNet-2.png' alt='' width='700' height='433' /></div></pre>
+#&gt; [1] "Network has 12 edges."</div><div class='img'><img src='barebonesCoNet-2.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># keep significant Euclidean distance on CLR-transformed data (samples are completed to sum to one)</span>
+<span class='no'>g</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/cbind.html'>rbind</a></span>(<span class='no'>ibd_genera</span>,<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fl'>1</span>,<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>ibd_genera</span>))-<span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span>(<span class='no'>ibd_genera</span>))
+<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='fu'>barebonesCoNet</span>(<span class='no'>g</span>,<span class='kw'>clr</span><span class='kw'>=</span><span class='fl'>TRUE</span>,<span class='kw'>methods</span><span class='kw'>=</span><span class='st'>"euclid"</span>,<span class='kw'>init.edge.num</span><span class='kw'>=</span><span class='fl'>50</span>,<span class='kw'>permut</span><span class='kw'>=</span><span class='fl'>TRUE</span>,<span class='kw'>columnwise</span><span class='kw'>=</span><span class='fl'>TRUE</span>))</div><div class='output co'>#&gt; [1] "Network construction with method(s): euclid"
+#&gt; [1] "Processing method euclid"
+#&gt; [1] "Lower threshold for initial edge number (50): 27.941264917359"
+#&gt; [1] "Upper threshold for initial edge number (50): 57.2944716021566"
+#&gt; [1] "Renormalisation is FALSE"
+#&gt; [1] "P-values of correlations are computed with cor.test FALSE"
+#&gt; [1] "Permutations and bootstraps are both computed FALSE"
+#&gt; [1] "Associations computed for 47 taxa."
+#&gt; [1] "Network has 49 edges."</div><div class='img'><img src='barebonesCoNet-3.png' alt='' width='700' height='433' /></div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -296,7 +326,7 @@ input matrix, but in this case, preprocessing on abundance data needs to be carr
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.0.</p>
 </div>
 
       </footer>

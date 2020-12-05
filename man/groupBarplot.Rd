@@ -12,6 +12,7 @@ groupBarplot(
   group.color.map = NULL,
   topTaxa = 10,
   sortGroupwise = TRUE,
+  sumGroupwise = FALSE,
   group.order = c(),
   hide.taxa = c(),
   randSampleNum = NA,
@@ -38,7 +39,9 @@ groupBarplot(
 
 \item{sortGroupwise}{if true, samples are sorted according to groups}
 
-\item{group.order}{if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated}
+\item{sumGroupwise}{if true, taxa are summed and sorted separately across samples within each group (if true, samples are always sorted group-wise)}
+
+\item{group.order}{if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated; can also be used to only plot selected groups}
 
 \item{hide.taxa}{do not consider these taxa as top-abundant taxa, but keep them among Others}
 
@@ -63,14 +66,17 @@ if extendTaxonColorMap is true, the taxon color map is returned
 Sort taxa by summed abundance across all samples and plot sorted taxon composition with a bar per sample
 }
 \details{
-Taxa are always sorted across all samples, also in the presence of a group membership vector.
+Note that taxa are always summed across all samples, also in the presence of a group membership vector, unless sumGroupwise is true.
 }
 \examples{
 data(ibd_taxa)
 data(ibd_metadata)
+groups=as.vector(ibd_metadata$Diagnosis)
 # taxon abundances were prefiltered and therefore do not add up to 1
-groupBarplot(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
+groupBarplot(ibd_taxa,groups=groups,randSampleNum=10)
+# sum taxa group-wise for sorting instead across all samples
+groupBarplot(ibd_taxa,groups=groups,sumGroupwise=TRUE, legend.hidegroups=TRUE)
 data(ibd_lineages)
 ibd_genera=aggregateTaxa(ibd_taxa,ibd_lineages,taxon.level = "genus")
-groupBarplot(ibd_genera,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
+groupBarplot(ibd_genera,groups=groups,randSampleNum=10)
 }

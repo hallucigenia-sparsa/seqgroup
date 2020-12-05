@@ -86,6 +86,31 @@ assignMetadataTypes<-function(data, categoric=c()){
   return(data)
 }
 
+#' @title Remove groups that have metadata items with missing values
+#' @param data a metadata matrix with rows as samples and columns as items or a dataframe with metadata items as columns
+#' @param groups group membership vector with as many entries as samples
+#' @return a vector with indices of samples without problematic groups
+#' @export
+removeGroupsWithMissingValues<-function(data, groups=c()){
+  if(is.data.frame(data)==FALSE){
+    data=as.data.frame(data)
+  }
+  unique.groups=unique(groups)
+  indices.samples.tokeep=c()
+  for(group in unique.groups){
+    group.member.indices=which(groups==group)
+    group.metadata=data[group.member.indices,]
+    na.indices=which(is.na(group.metadata)==TRUE)
+    # no missing metadata: keep the group
+    if(length(na.indices)==0){
+      indices.samples.tokeep=c(indices.samples.tokeep,group.member.indices)
+    }else{
+      print(paste("Removing group",group))
+    }
+  } # end group loop
+  return(indices.samples.tokeep)
+}
+
 #' @title Replace missing values by group mean.
 #'
 #' @description Missing values are replaced either by the group mean

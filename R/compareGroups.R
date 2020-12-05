@@ -7,7 +7,8 @@
 #' @param property richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)
 #' @param method for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported
 #' @param groups group membership vector with as many entries as samples in abundances
-#' @param colors define a color for each group with as many entries as there are groups, appearing in the order in which groups first appear (only for plot.type pergroup)
+#' @param colors optional color vector with as many entries as (unique) groups (only for plot.type pergroup)
+#' @param colorMap optional color map with a color for a metadata value, required for color legend (only for plot.type pergroup)
 #' @param plot.type pergroup (plot property per group; this is the only plot type available for richness, evenness, alpha and beta with DM) and intravsinter (plot property for all within-group samples versus all samples)
 #' @param avg none, mean or median (average group property with the selected averaging method, does not work for method DM)
 #' @param all include the beta diversity for all samples
@@ -15,14 +16,25 @@
 #' @param rowNorm for beta diversity with method dissim: normalize the abundances row-wise
 #' @param subsample subsample groups randomly to have the same sample number in each group; for plot type intravsinter, it equalises in additon the number of pairs within and between groups
 #' @param xlab the x axis label
-#' @param pvalViz if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr
+#' @param pvalViz if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr
+#' @param returnValues if true, return properties
+#' @return if returnValues is true, properties are returned
 #' @examples
 #' data("ibd_taxa")
 #' data("ibd_metadata")
 #' groups=as.vector(ibd_metadata$Diagnosis)
 #' compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
+#' data("floresgut_taxa")
+#' data("floresgut_metadata")
+#' groups=floresgut_metadata$host_subject_id
+#' diet.col=makeColorsGivenMetadata(metadataItem=floresgut_metadata$diet,groups=groups)
+#' compareGroups(floresgut_taxa,groups=groups,colors=diet.col$colors,colorMap=diet.col$colormap)
+#' age=floresgut_metadata$age
+#' age.col=makeColorsGivenMetadata(metadataItem=age,groups=groups,binning="equaldist",numBins=10)
+#' col=age.col$colors
+#' compareGroups(floresgut_taxa,groups=groups,property="alpha",colors=col,colorMap=age.col$colormap)
 #' @export
-compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), colors=c(), plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE){
+compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), colors=c(), colorMap=NULL, plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE, returnValues=FALSE){
   supported.properties=c("richness","evenness","alpha","beta")
   if(plot.type=="intravsinter" && property!="beta"){
     stop("The intravsinter plot type is only supported for beta diversity!")
@@ -70,18 +82,33 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   if(property!="beta"){
     method=""
   }
-  if(length(colors)>0 && length(groups)>0){
-    if(length(colors)!=length(unique(groups))){
-      stop("Please provide as many colors as there are groups!")
-    }
-  }
-  if(length(colors)==0 && length(groups)>0){
-    colors=rep("white",length(groups))
-  }
+
   unique.groups=unique(groups)
   if(is.numeric(unique.groups)){
     unique.groups=sort(unique.groups)
   }
+
+  las=1
+  if(length(unique(groups))>10){
+    las=2 # vertical x axis labels
+  }
+
+  if(length(colors)>0 && length(groups)>0){
+    if(length(colors)!=length(unique(groups))){
+      #print(length(unique(groups)))
+      #print(length(colors))
+      stop("Please provide as many colors as there are groups!")
+    }
+  }
+
+  if(length(colors)==0 && length(groups)>0){
+    colors=rep("white",length(groups))
+  }else if(length(colors)==0 && length(groups)==0){
+    # default color if no groups are provided
+    colors=c("black")
+  }
+
+
   # computing intra-group variability
   groups.with.theta=c()
   interdissim=c()
@@ -91,6 +118,9 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   groupspecavgprops=c()
   main=""
   ylab=""
+
+  # return
+  res=NULL
 
   if(xlab==""){
     if(plot.type=="intravsinter"){
@@ -117,7 +147,7 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
   # loop groups
   for(group in unique.groups){
     groupspecdissim=c()
-    print(paste("Processing group",group))
+    #print(paste("Processing group",group))
     group.indices=which(groups==group)
     if(constrainSampleNum){
       group.indices=sample(group.indices)[1:sampleNum]
@@ -211,6 +241,13 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
     }
   } # end all
 
+  if(las==2){
+    xlab=""
+  }
+  #if(!is.null(colorMap)){
+    # TODO to make space in par for the legend and shift it there, no longer needed for violin plots, but still required for barplots
+  #}
+
   # plot
   if(plot.type=="pergroup"){
     if(method=="DM"){
@@ -222,7 +259,8 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
         thetas=c(intradissim,interdissim)
       }
       range=c(0,max(thetas))
-      barplot(thetas,names.arg=names.arg,xlab=xlab,ylab="Theta",main="Estimated overdispersion",ylim=range, col = colors)
+      res=thetas
+      compareGroupsPlot(mat=thetas, labels=names.arg, xlab=xlab, ylab="Theta", main="Estimated overdispersion", range=range, plotType = "bar",colors=colors, las=las, colorMap=colorMap)
     }else{
       if(avg!="none"){
         names(groupspecavgprops)=unique.groups
@@ -241,7 +279,8 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
          range=c(0,1)
         }
         ylab=paste(avg,ylab)
-        barplot(groupspecavgprops,xlab=xlab,ylab=ylab,main=main,ylim=range, col=colors)
+        res=groupspecavgprops
+        compareGroupsPlot(mat=groupspecavgprops, xlab=xlab, ylab=ylab, main=main, range=range, plotType = "bar",colors=colors, las=las, colorMap=colorMap)
       }else{
         # richness, evenness and alpha-diversity that are not averaged as well as beta-diversity with method dissim are displayed as box plots
         if(all && property=="beta"){
@@ -249,11 +288,10 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
         }
         mat=listToMat(pergroupdissim)
         ylim=c(0,max(mat,na.rm = TRUE))
+        res=mat
         # display box plot with p-values
         if(pvalViz){
-          df=as.data.frame(mat)
-          # ggplot2 and reshape2 is imported by phyloseq, which is imported by seqgroup
-          # stat_compare_means requires package ggpubr, also imported by seqgroup
+          #df=as.data.frame(mat)
           combinations=list()
           units=colnames(mat)
           for(index1 in 1:(length(units)-1)){
@@ -280,22 +318,10 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
             }
           }
           print(paste("Number of significant differences in property",property,"across groups:",length(combinations)))
-          variable="" # to avoid error message in package built
-          df_melt <- melt(df)
-          if(length(combinations)>0){
-            # TODO: colors are ignored
-            # cannot set ylim, else p-values are not plotted correctly
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+scale_fill_manual(values=colors)+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2))
-          }else{
-            ggplot(df_melt, aes(variable,value))+geom_boxplot()+scale_fill_manual(values=colors)+ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main)+geom_jitter(position = position_jitter(0.2)) + ylim(ylim[1],ylim[2])
-          }
+          compareGroupsPlot(mat=mat, groups=groups, colors=colors, combinations=combinations, xlab=xlab, ylab=ylab, main=main, plotType = "pvalues")
         }else{
-          #print(dim(mat))
-          #print(colnames(mat))
-          boxplot(mat,ylab=ylab, main=main, xlab=xlab, notch=FALSE,ylim=ylim, col = colors) # border=colors
-          for(i in 1:ncol(mat)){
-            points(rep(i,length(mat[,i])),mat[,i])
-          }
+          # alternative plot type: box, violin
+          compareGroupsPlot(mat=mat, xlab=xlab, ylab=ylab, groups=groups, main=main, colors=colors, las=las, colorMap=colorMap, plotType = "violin")
         }
       }
     }
@@ -325,12 +351,311 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
     #print(max)
     #print(maxD)
     cols=c(rgb(0,1,0,0.5),rgb(1,0,0,0.5))
+    res=mat
     hist(mat[,1],xlim=c(min,max),ylim=c(0,maxD), main=paste("P-value Wilcoxon",pval,sep=": "), xlab=xlab, col=cols[1], breaks="FD")
     hist(mat[,2],col=cols[2], breaks="FD", add=T)
     legend("topleft", colnames(mat), lty = rep(1,length(cols)), col = cols, merge = TRUE, bg = "white", text.col="black")
   }else{
     stop(paste("Plot type",plot.type,"is not supported."))
   }
+
+  if(returnValues){
+    return(res)
+  }
+}
+
+# Internal function for group-wise property plotting.
+# mat: values to be plotted
+# xlab: label for x axis
+# ylab: label for y axis
+# range: y axis range
+# main: title of the plot
+# groups: group membership vector
+# labels: bar plot labels
+# colors: bar/box color
+# combinations: for pvalue plots
+# las: orientation of axis labels
+# plotType: box, bar, pvalues or violin
+# colorMap: color map for a metadata item, adds color legend
+compareGroupsPlot<-function(mat, xlab="", ylab="", range=c(), main="", groups=c(), labels=c(), colors=c(), combinations=c(), las=1, plotType="box", colorMap=NULL){
+
+  legend.colors=c()
+  if(!is.null(colorMap)){
+    for(entry in names(colorMap)){
+      legend.colors=c(legend.colors,colorMap[[entry]])
+    }
+  }
+
+  if(plotType=="box"){
+    # varwidth does not work, notch generates a warning message
+    boxplot(mat,ylab=ylab, main=main, xlab=xlab, notch=FALSE,ylim=range, col = colors, cex.names = 0.9, las=las) # border=colors
+    for(i in 1:ncol(mat)){
+        points(rep(i,length(mat[,i])),mat[,i])
+    }
+  # make a plot with ggplot2
+  }else if(plotType=="violin" || plotType=="pvalues"){
+    # ggplot2 and reshape2 are imported by phyloseq, which is imported by seqgroup
+    # stat_compare_means requires package ggpubr, also imported by seqgroup
+    # to avoid error messages in package built
+    variable=""
+    value=""
+    color=""
+    df=as.data.frame(mat)
+    df_melt <- melt(df)
+    # if a color map is given, add color as third factor
+    if(!is.null(colorMap)){
+      # melt color map into two vectors
+      legend.names=names(colorMap)
+      legend.colors=c()
+      for(name in names(colorMap)){
+        legend.colors=c(legend.colors,colorMap[[name]])
+      }
+      #print(colors)
+      #print(legend.names)
+      #print(legend.colors)
+      df_melt_extended=matrix(nrow=nrow(df_melt),ncol=3)
+      unique.groups=unique(groups)
+      #print(unique.groups)
+      # loop rows of df_melt object and add color
+      for(i in 1:nrow(df_melt)){
+        group=as.character(df_melt[i,1])
+        group.index=which(unique.groups==group)
+        df_melt_extended[i,1]=group
+        df_melt_extended[i,2]=as.numeric(as.character(df_melt[i,2]))
+        # find the name of the metadata item in the color map
+        color.name.index=which(legend.colors==as.character(colors[group.index]))
+        df_melt_extended[i,3]=as.character(legend.names[color.name.index])
+      }
+      colnames(df_melt_extended)=c("variable","value","color")
+      df_melt_extended=as.data.frame(df_melt_extended)
+      # make sure value is not treated as a factor
+      df_melt_extended$value=as.numeric(as.character(df_melt_extended$value))
+    }
+    if(plotType=="pvalues"){
+      # cannot set ylim, else p-values are not plotted correctly
+      if(!is.null(colorMap)){
+        p <- ggplot(df_melt_extended, aes(variable, value, fill=color))+geom_violin()+ ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
+        plot(p)
+      }else{
+        # geom_jitter(position = position_jitter(0.2))
+        p <- ggplot(df_melt, aes(variable, value, fill=variable))+ guides(fill=FALSE) +geom_violin(show.legend=FALSE)+ scale_fill_manual(values=colors) + ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
+        plot(p)
+      }
+    }else{
+      if(!is.null(colorMap)){
+        p <- ggplot(df_melt_extended, aes(variable,value, fill=color)) + geom_violin()  +  xlab(xlab) + ylab(ylab) + ggtitle(main) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+        plot(p)
+      }else{
+        # to remove legend: http://www.cookbook-r.com/Graphs/Legends_(ggplot2)/
+        p <- ggplot(df_melt, aes(variable,value, fill=variable)) + guides(fill=FALSE) + geom_violin()  + scale_fill_manual(values=colors) + xlab(xlab) + ylab(ylab) + ggtitle(main) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+        plot(p)
+      }
+    }
+  }else if(plotType=="bar"){
+    if(length(labels)>0){
+      barplot(mat,names.arg=labels, cex.names = 0.9, xlab=xlab,ylab=ylab,main=main,ylim=range, col = colors, las=las)
+    }else{
+      barplot(mat,xlab=xlab,ylab=ylab,main=main, ylim=range, col=colors,cex.names = 0.9, las=las)
+    }
+  }else{
+    stop(paste("Plot type",plotType,"is not supported."))
+  }
+  if(!is.null(colorMap) && (plotType!="pvalues") && (plotType!="violin")){
+    legend("topright",legend=names(colorMap), cex=0.9, bg = "white", text.col=legend.colors)
+  }
+}
+
+
+#' @title Assign colors such that they encode a metadata item
+#' @description For a binary or categoric metadata item, as many colors as categories exist are assigned.
+#' For a numeric metadata item, the item is binned according to the equalfreq or equalwidth
+#' strategy in as many bins as requested. Alternatively, the user can also provide thresholds to define bins.
+#' Each bin is assigned its color. If the groups vector is empty, a color vector is returned with as many entries as samples.
+#' If groups are given, a group color vector is returned with as many entries as groups. The color map is returned along with
+#' the color vector.
+#' @details Notation: a round bracket means that the end point is excluded, a square bracket that the end point is included.
+#' For groupColorStrategy maxfreq: if there are several equally frequent bins in the group, the first one is selected.
+#' Missing values receive color "gray".
+#' @param metadataItem a vector with binary, categoric or numeric values
+#' @param groups an optional group vector with as many entries as samples in the target data set
+#' @param binning binning strategy, only required for numeric metadata, either a string (equalfreq: the same number of samples in each group or equaldist: the same range of values) or a vector with thresholds
+#' @param numBins the number of bins into which to bin a numeric metadata item, if zero: as many bins as samples (only required for numeric metadata and equalfreq/equaldist binning)
+#' @param binLabels optional names for bins
+#' @param groupColorStrategy maxfreq (assign the most frequent bin color to the group), binnum (color encodes number of bins per group)
+#' @param returnBinned return the binned metadataItem
+#' @return a list with color vector and a color map, if returnBinned is true, in addition bins
+#' @export
+makeColorsGivenMetadata<-function(metadataItem=c(), groups=c(), binning="equalfreq", numBins=0, binLabels=c(), groupColorStrategy="maxfreq",returnBinned=FALSE){
+
+  bins=numBins
+  if(bins==0){
+    bins=length(metadataItem)
+  }
+
+  # vector with sample membership in binned metadata item
+  binned=c()
+  # vector with sample-wise or group-wise colors
+  colors=c()
+  # map to look up color assigned to bin
+  colorMap=list()
+  # result list
+  res=list()
+  # indices of missing values
+  na.indices=which(is.na(metadataItem))
+
+  # numeric metadata item and binning requested
+  if(is.numeric(metadataItem) && bins<length(metadataItem)){
+    print("Metadata item is numeric.")
+    # binning strategy: thresholds were provided
+    if(is.numeric(binning)){
+      # check if minimum and maximum are provided as thresholds
+      if(!(min(metadataItem) %in% binning)){
+        binning=c(min(metadataItem),binning)
+        print(paste("Adding minimum (",min(metadataItem),") as bin."))
+      }
+      if(!(max(metadataItem) %in% binning)){
+        binning=c(binning,max(metadataItem))
+        print(paste("Adding maximum (",max(metadataItem),") as bin."))
+      }
+      if(length(binLabels)>0){
+        if(length(binLabels)==length(binning) || length(binLabels)>length(binning)){
+          stop("There should be one label less than binning thresholds!")
+        }
+        binned=cut(metadataItem,breaks=binning, include.lowest=TRUE,labels=binLabels)
+      }else{
+        binned=cut(metadataItem,breaks=binning, include.lowest=TRUE)
+      }
+    # equaldist strategy
+    }else if(binning == "equaldist"){
+      # bin vector (equaldist)
+      cut.out=cut(metadataItem,breaks=bins)
+      print("Thresholds equaldist binning:")
+      print(levels(cut.out))
+      # rename bins (previously named after borders)
+      if(length(binLabels)==bins){
+        levels(cut.out)=binLabels
+      }
+      binned=cut.out
+    # equalfreq strategy
+    }else if(binning == "equalfreq"){
+      # divide into requested number of intervals
+      intervals=seq(0,1,(1/bins))
+      thresholds=quantile(metadataItem,probs=intervals, na.rm=TRUE)
+      print("Thresholds equalfreq binning:")
+      print(thresholds[2:(length(thresholds)-1)])
+      binned=metadataItem
+      for(i in 2:length(thresholds)){
+        set1=which(metadataItem>=thresholds[(i-1)])
+        set2=which(metadataItem<thresholds[i])
+        indices=intersect(set1,set2)
+        if(length(binLabels)>0){
+          binned[indices]=binLabels[(i-1)]
+        }else{
+          if(i==2){
+            binned[indices]=paste("[",thresholds[(i-1)],",",thresholds[i],"]",sep="")
+          }else if(i==length(thresholds)){
+            binned[indices]=paste("[",thresholds[(i-1)],",",thresholds[i],"]",sep="")
+          }else{
+            binned[indices]=paste("(",thresholds[(i-1)],",",thresholds[i],")",sep="")
+          }
+        }
+      }
+      maxindex=which(metadataItem==max(metadataItem, na.rm=TRUE))
+      if(length(binLabels)>0){
+        binned[maxindex]=binLabels[length(binLabels)]
+        levels(binned)=binLabels
+      }else{
+        binned[maxindex]=paste("[",thresholds[(length(thresholds)-1)],",",thresholds[length(thresholds)],"]",sep="")
+      }
+    }else{
+      stop("Binning strategy ",binning," not supported!")
+    }
+  # do not bin numeric metadata item
+  }else if(bins == length(metadataItem)){
+    print("Each sample is assigned into its own bin.")
+    binned = metadataItem
+  }else{
+    print("Metadata item is binary/categoric")
+    bins=length(unique(metadataItem))
+    print(paste("Number of categories:",bins))
+    binned = metadataItem
+  }
+
+  # drop levels efficiently
+  binned=as.character(binned)
+
+  # treat missing values
+  if(length(na.indices)>0){
+    print(paste(length(na.indices),"missing values found."))
+    binned[na.indices]="NA" # will be assigned a gray color
+    colorMap[["NA"]]="gray"
+  }
+
+  #print(binned)
+
+  # get a vector with as many colors as samples
+  colors=assignColorsToGroups(groups=binned, refName="NA")
+
+  # assemble color map
+  for(index in 1:length(binned)){
+    abin=binned[index]
+    if(!(abin %in% names(colorMap))){
+      colorMap[[as.character(abin)]]=colors[index]
+    }
+  }
+
+  #print(names(colorMap))
+
+  if(length(groups)>0){
+    group.colors=c()
+    unique.groups=unique(groups)
+    hues=c()
+    # count number of bins in each group to identify the range
+    bins.per.group=c()
+    group.counter=1
+    if(groupColorStrategy=="binnum"){
+      colorMap=list() # reset color map
+      for(group in unique.groups){
+        group.member.indices=which(groups==group)
+        bins.per.group=c(bins.per.group,length(unique(binned[group.member.indices])))
+      }
+      col.vec = seq(0,1,1/max(bins.per.group))
+      hues = hsv(col.vec)
+    }
+    # loop groups
+    for(group in unique.groups){
+      group.member.indices=which(groups==group)
+      if(groupColorStrategy=="maxfreq"){
+        # get the name of the most frequent bin in the group
+        maxfreq.bin.label=names(sort(table(binned[group.member.indices]),decreasing = TRUE))[1]
+        #print(paste("Most frequent bin in group",group,":",maxfreq.bin.label))
+        # get an index of the bin
+        maxfreq.bin.index=which(binned==maxfreq.bin.label)[1]
+        # get the corresponding color
+        maxfreq.bin.color=colors[maxfreq.bin.index]
+        group.colors=c(group.colors,maxfreq.bin.color)
+      }else if(groupColorStrategy=="binnum"){
+        bin.number=bins.per.group[group.counter]
+        group.colors=c(group.colors,hues[bin.number])
+        if(!(bin.number %in% names(colorMap))){
+          colorMap[[bin.number]]=hues[bin.number]
+        }
+      }else{
+        stop(paste("Group color strategy",groupColorStrategy,"not supported."))
+      }
+      group.counter=group.counter+1
+    } # end group loop
+    colors=group.colors
+  }
+
+  if(returnBinned){
+    res=list(colors, colorMap, binned)
+    names(res)=c("colors","colormap","bins")
+  }else{
+    res=list(colors,colorMap)
+    names(res)=c("colors","colormap")
+  }
+  return(res)
 }
 
 # Convert a list into a matrix. When a list entry

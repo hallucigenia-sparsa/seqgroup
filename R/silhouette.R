@@ -1,7 +1,13 @@
-#' @title Get silhouette score for cluster labels
+#' @title Get silhouette score for a clustering result
 #'
-#' @description A wrapper around vegdist that computes the silhouette score directly on these distances
-#'
+#' @description The silhouette score is a cluster qualiy index that assessses both cluster cohesion
+#' (how close points within the same cluster are to each other) and cluster separation
+#' (how well different clusters are separated) for a given clustering result (encoded in the group membership vector).
+#' The silhouette score is bounded by -1 (worst value) and 1 (best value). The silhouette score s of a point i is defined as:
+#' s(i)=b(i)-a(i)/max(b(i),max(i)), where a(i) is the mean distance of this point to all other points within the same cluster
+#' and b(i) is the smallest mean distance to data points in the nearest neighboring cluster.
+#' The silhouette score of the entire clustering is computed as the mean of silhouette scores across all points.
+#' This function wraps vegdist to compute distances/dissimilarities.
 #'
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param groups vector with group memberships

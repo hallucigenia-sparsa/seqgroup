@@ -9,7 +9,8 @@ transitionProbabs(
   groups = c(),
   metadata.vec = c(),
   windowSize = 4,
-  freq = FALSE
+  freq = FALSE,
+  logodds = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ transitionProbabs(
 \item{windowSize}{in case metadata are provided: the size of the sliding window}
 
 \item{freq}{if true, transition frequencies instead of probabilities are returned (for metadata.vec, always true)}
+
+\item{logodds}{if true, compute logarithm of the ratio of the observed and the expected transition probability}
 }
 \value{
 a matrix or, if metadata.vec provided, a list with 2 matrices, the first without metadata change and the second with metadata change
@@ -39,6 +42,11 @@ collected for several related experiments
 (e.g. study participants). The order of samples
 in the cluster and group membership vectors is
 supposed to be the same.
+If logodds is true, the log ratio between the observed and
+expected transition probability is computed, where the latter
+is the product of the prior probabilities for the two clusters. A log
+ratio above 1 or below -1 means that observed transition probabilities are
+greater or smaller than expected at random.
 If a binary metadata item is provided, the function
 counts how often transitions occur within a sliding window
 with and without a metadata change. In this case, two matrices are
@@ -59,5 +67,5 @@ gr=graph_from_adjacency_matrix(trans.mat,mode="directed",weighted = TRUE)
 # plot graph with transition probabilities as edge thickness
 edge.weights=as.vector(t(trans.mat))
 edge.weights=edge.weights[edge.weights>0]
-plot(gr,edge.width=edge.weights) # edge weights may need to be scaled
+plot(gr,edge.width=edge.weights*10) # 10 is a factor to scale edge weights, may have to be adjusted
 }

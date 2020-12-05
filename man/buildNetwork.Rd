@@ -32,9 +32,9 @@ buildNetwork(
 
 \item{min.occ}{only keep rows with at least the given number of non-zero values, keep the sum of the other rows (carried out before network construction)}
 
-\item{norm}{normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI}
+\item{norm}{normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI (where it is already applied)}
 
-\item{clr}{apply CLR transform (after filtering and normalization; \code{\link{clr}} with omit.zeros true); not carried out for SPIEC-EASI}
+\item{clr}{apply CLR transform (after filtering and normalization; \code{\link{clr}} with omit.zeros true); not carried out for SPIEC-EASI (already applied)}
 
 \item{method}{mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)}
 

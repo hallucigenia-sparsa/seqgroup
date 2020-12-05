@@ -156,6 +156,11 @@ findClustersGivenK<-function(abundances, method="dmm", k=5){
 #' (e.g. study participants). The order of samples
 #' in the cluster and group membership vectors is
 #' supposed to be the same.
+#' If logodds is true, the log ratio between the observed and
+#' expected transition probability is computed, where the latter
+#' is the product of the prior probabilities for the two clusters. A log
+#' ratio above 1 or below -1 means that observed transition probabilities are
+#' greater or smaller than expected at random.
 #' If a binary metadata item is provided, the function
 #' counts how often transitions occur within a sliding window
 #' with and without a metadata change. In this case, two matrices are
@@ -172,6 +177,7 @@ findClustersGivenK<-function(abundances, method="dmm", k=5){
 #' @param metadata.vec an optional binary metadata item
 #' @param windowSize in case metadata are provided: the size of the sliding window
 #' @param freq if true, transition frequencies instead of probabilities are returned (for metadata.vec, always true)
+#' @param logodds if true, compute logarithm of the ratio of the observed and the expected transition probability
 #' @return a matrix or, if metadata.vec provided, a list with 2 matrices, the first without metadata change and the second with metadata change
 #' @examples
 #' # generate random cluster memberships
@@ -182,12 +188,16 @@ findClustersGivenK<-function(abundances, method="dmm", k=5){
 #' # plot graph with transition probabilities as edge thickness
 #' edge.weights=as.vector(t(trans.mat))
 #' edge.weights=edge.weights[edge.weights>0]
-#' plot(gr,edge.width=edge.weights) # edge weights may need to be scaled
+#' plot(gr,edge.width=edge.weights*10) # 10 is a factor to scale edge weights, may have to be adjusted
 #' @export
-transitionProbabs<-function(clus.vec=c(), groups=c(), metadata.vec=c(), windowSize=4, freq=FALSE){
+transitionProbabs<-function(clus.vec=c(), groups=c(), metadata.vec=c(), windowSize=4, freq=FALSE, logodds=FALSE){
   na.clus=which(is.na(clus.vec))
   if(length(na.clus)>0){
     stop("Missing values in the cluster assignment are not allowed.")
+  }
+  if(logodds && length(metadata.vec)>0){
+    warning("Log odds ratio is not calculated when metadata are provided.")
+    logodds=FALSE
   }
   unique.groups=unique(clus.vec)
   clus.transitions=matrix(0,nrow=length(unique.groups),ncol=length(unique.groups))
@@ -197,6 +207,7 @@ transitionProbabs<-function(clus.vec=c(), groups=c(), metadata.vec=c(), windowSi
   rownames(clus.triggered.transitions)=unique.groups
   colnames(clus.triggered.transitions)=rownames(clus.transitions)
 
+  # metadata provided
   if(length(metadata.vec)>0){
     for(i in 1:(length(clus.vec)-windowSize)){
       forbidden=FALSE
@@ -262,9 +273,34 @@ transitionProbabs<-function(clus.vec=c(), groups=c(), metadata.vec=c(), windowSi
       prev.clus=clus
     } # end loop clus.vec
 
-    # convert into probabilities
-    if(!freq){
+    # convert into probabilities when freq is false or logodds is true
+    if(!freq || logodds){
       clus.transitions=clus.transitions/transitions
+    }
+    # compute log-ratio of observed probability and prior probability
+    # prior probability is the number of times a cluster is observed divided by sample number
+    if(logodds){
+      prior.probabs=table(clus.vec)/length(clus.vec)
+      print(paste("Prior probabilities"))
+      print(prior.probabs)
+      prior.probabs.ordered=prior.probabs
+      # give prior probabs the same order as in transition matrix
+      group.counter=1
+      for(group in unique.groups){
+        index.prior.probabs=which(rownames(prior.probabs)==group)
+        prior.probabs.ordered[group.counter]=prior.probabs[index.prior.probabs]
+        group.counter=1+group.counter
+      }
+      # compute expected transition probabilities
+      expected.clus.transitions = matrix(0,nrow=length(unique.groups),ncol=length(unique.groups))
+      for(i in 1:length(unique.groups)){
+        for(j in 1:length(unique.groups)){
+          expected.clus.transitions[i,j]=prior.probabs.ordered[i]*prior.probabs.ordered[j]
+        }
+      }
+      # compute logodds matrix
+      clus.transitions=log(clus.transitions/expected.clus.transitions)
+      clus.transitions[is.infinite(clus.transitions)]=NA
     }
   }
   if(length(metadata.vec)>0){

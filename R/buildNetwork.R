@@ -28,8 +28,8 @@
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param lineages a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)
 #' @param min.occ only keep rows with at least the given number of non-zero values, keep the sum of the other rows (carried out before network construction)
-#' @param norm normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI
-#' @param clr apply CLR transform (after filtering and normalization; \code{\link{clr}} with omit.zeros true); not carried out for SPIEC-EASI
+#' @param norm normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI (where it is already applied)
+#' @param clr apply CLR transform (after filtering and normalization; \code{\link{clr}} with omit.zeros true); not carried out for SPIEC-EASI (already applied)
 #' @param method mb or glasso (SPIEC-EASI), any combination of pearson, spearman, bray and/or kld (CoNet), hc, tabu, h2pc, mmhc, rsmax2, aracne, pc.stable, gs, fast.iamb, iamb.fdr, mmpc, hpc or si.hiton.pc (bnlearn, for aracne mi is set to mi-g)
 #' @param repNum the number of permutation/bootstrap iterations for CoNet with dissimilarities and of bootstrap iterations in SPIEC-EASI and bnlearn; can be omitted (set to 0) for time-intensive bnlearn methods or for CoNet without p-values
 #' @param minStrength bnlearn only: the minimum probability for an arc to appear across bootstraps (only applicable if repNum is set larger 1)
@@ -74,7 +74,14 @@ buildNetwork<-function(abundances, lineages=NULL, min.occ=0, norm=FALSE, clr=FAL
     }
   }
 
-  abundances = filterTaxonMatrix(abundances,keepSum = TRUE, minocc=min.occ)
+  if(min.occ>0){
+    abundances = filterTaxonMatrix(abundances,keepSum = TRUE, minocc=min.occ)
+    # filter lineages if given
+    if(!is.null(lineages)){
+      indices.kept=match(rownames(abundances),rownames(lineages))
+      lineages=lineages[indices.kept,]
+    }
+  }
 
   # normalize matrix
   if(norm == TRUE){

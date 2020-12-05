@@ -40,7 +40,8 @@ Builds groups of networks randomly and counts their number of intersection edges
 Each random network is built by randomly sampling from the total number of possible edges.
 The p-value is computed parameter-free by counting the number of times the intersection size of
 random networks is smaller than the intersection size in the observed networks and dividing it
-by the number of iterations.
+by the number of iterations. Please see \href{https://github.com/ramellose/anuran}{https://github.com/ramellose/anuran}
+for a dedicated tool that assesses the significance of network intersections.
 }
 \examples{
 networkIntersectSig(rep.num=3,taxon.num=8,avg.network.size=12,inter.size=10,directed=TRUE)

@@ -10,6 +10,7 @@ compareGroups(
   method = "dissim",
   groups = c(),
   colors = c(),
+  colorMap = NULL,
   plot.type = "pergroup",
   avg = "none",
   all = FALSE,
@@ -17,7 +18,8 @@ compareGroups(
   rowNorm = FALSE,
   subsample = TRUE,
   xlab = "",
-  pvalViz = FALSE
+  pvalViz = FALSE,
+  returnValues = FALSE
 )
 }
 \arguments{
@@ -29,7 +31,9 @@ compareGroups(
 
 \item{groups}{group membership vector with as many entries as samples in abundances}
 
-\item{colors}{define a color for each group with as many entries as there are groups, appearing in the order in which groups first appear (only for plot.type pergroup)}
+\item{colors}{optional color vector with as many entries as (unique) groups (only for plot.type pergroup)}
+
+\item{colorMap}{optional color map with a color for a metadata value, required for color legend (only for plot.type pergroup)}
 
 \item{plot.type}{pergroup (plot property per group; this is the only plot type available for richness, evenness, alpha and beta with DM) and intravsinter (plot property for all within-group samples versus all samples)}
 
@@ -45,7 +49,12 @@ compareGroups(
 
 \item{xlab}{the x axis label}
 
-\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the box plot using function stat_compare_means in R package ggpubr}
+\item{pvalViz}{if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr}
+
+\item{returnValues}{if true, return properties}
+}
+\value{
+if returnValues is true, properties are returned
 }
 \description{
 The function allows to compare richness, evenness, alpha diversity and beta diversity across groups, where
@@ -58,4 +67,13 @@ data("ibd_taxa")
 data("ibd_metadata")
 groups=as.vector(ibd_metadata$Diagnosis)
 compareGroups(ibd_taxa,groups=groups,property="alpha",pvalViz = TRUE)
+data("floresgut_taxa")
+data("floresgut_metadata")
+groups=floresgut_metadata$host_subject_id
+diet.col=makeColorsGivenMetadata(metadataItem=floresgut_metadata$diet,groups=groups)
+compareGroups(floresgut_taxa,groups=groups,colors=diet.col$colors,colorMap=diet.col$colormap)
+age=floresgut_metadata$age
+age.col=makeColorsGivenMetadata(metadataItem=age,groups=groups,binning="equaldist",numBins=10)
+col=age.col$colors
+compareGroups(floresgut_taxa,groups=groups,property="alpha",colors=col,colorMap=age.col$colormap)
 }

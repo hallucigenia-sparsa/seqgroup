@@ -1,6 +1,6 @@
 #' @title Bar plot of taxon composition with group support
 #' @description Sort taxa by summed abundance across all samples and plot sorted taxon composition with a bar per sample
-#' @details Taxa are always sorted across all samples, also in the presence of a group membership vector.
+#' @details Note that taxa are always summed across all samples, also in the presence of a group membership vector, unless sumGroupwise is true.
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param groups group membership vector with as many entries as samples
 #' @param aggregate if groups are given, plot the aggregate across the group (or its selected samples if randSampleNum is true); possible values: none, median and mean
@@ -8,7 +8,8 @@
 #' @param group.color.map map of group-specific colors, should match group names
 #' @param topTaxa number of top taxa to be plotted
 #' @param sortGroupwise if true, samples are sorted according to groups
-#' @param group.order if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated
+#' @param sumGroupwise if true, taxa are summed and sorted separately across samples within each group (if true, samples are always sorted group-wise)
+#' @param group.order if a vector with group names (one for each group) is given, group samples will be sorted in the order indicated; can also be used to only plot selected groups
 #' @param hide.taxa do not consider these taxa as top-abundant taxa, but keep them among Others
 #' @param randSampleNum if larger 0, sortGroupwise is set to true and the indicated sample number is randomly selected for each group
 #' @param summedTaxonColor the color of the summed taxa, by default gray
@@ -21,13 +22,29 @@
 #' @examples
 #' data(ibd_taxa)
 #' data(ibd_metadata)
+#' groups=as.vector(ibd_metadata$Diagnosis)
 #' # taxon abundances were prefiltered and therefore do not add up to 1
-#' groupBarplot(ibd_taxa,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
+#' groupBarplot(ibd_taxa,groups=groups,randSampleNum=10)
+#' # sum taxa group-wise for sorting instead across all samples
+#' groupBarplot(ibd_taxa,groups=groups,sumGroupwise=TRUE, legend.hidegroups=TRUE)
 #' data(ibd_lineages)
 #' ibd_genera=aggregateTaxa(ibd_taxa,ibd_lineages,taxon.level = "genus")
-#' groupBarplot(ibd_genera,groups=as.vector(ibd_metadata$Diagnosis),randSampleNum=7)
+#' groupBarplot(ibd_genera,groups=groups,randSampleNum=10)
 #' @export
-groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, group.order=c(), hide.taxa=c(), randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, legend.hidegroups=FALSE, ...){
+groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, sumGroupwise=FALSE, group.order=c(), hide.taxa=c(), randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, legend.hidegroups=FALSE, ...){
+
+  if(sumGroupwise && length(groups)==0){
+    warning("Can only sum groupwise if groups are provided. Summing groupwise will be ignored.")
+    sumGroupwise=FALSE
+  }
+
+  if(sumGroupwise){
+    sortGroupwise=TRUE
+  }
+
+  if(sumGroupwise && length(hide.taxa)>0){
+    stop("Summing group-wise cannot be used together with hiding taxa.")
+  }
 
   if(length(groups)>0){
     if(length(groups)!=ncol(abundances)){
@@ -37,6 +54,10 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
 
   if(aggregate != "none" && length(groups)==0){
     stop("For aggregation across groups, a group membership vector is needed.")
+  }
+
+  if(aggregate == TRUE){
+    stop("Possible values for aggregate are none, median and mean.")
   }
 
   # if no groups are assigned, put all samples into the same default group
@@ -69,6 +90,7 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
   mar.scale=0.5 # maximal number of characters is scaled by this number to compute mar on the right side
 
   sorted=NULL
+  superabundances=matrix(NA,nrow=1,ncol=1)
   taxon.colors=c()
   group.colors=c()
 
@@ -80,7 +102,7 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
   # sort samples according to group membership
   if(sortGroupwise && (groupNum>1 || randSampleNum>0)){
     abundancesSorted=NULL
-    updated.groups=c()
+    #updated.groups=c()
     # loop groups
     for(group in unique(groups)){
       group.member.indices=which(groups==group)
@@ -92,12 +114,14 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
         }
       }
       group.indices.map[[group]]=group.member.indices
-      if(aggregate == "median"){
-        group.indices.map[[group]]=counter
-        aggregated[,counter]=apply(abundances[,group.member.indices],1,median) # compute median row-wise
-      }else if(aggregate == "mean"){
-        group.indices.map[[group]]=counter
-        aggregated[,counter]=apply(abundances[,group.member.indices],1,mean) # compute mean row-wise
+      if(!sumGroupwise){
+        if(aggregate == "median"){
+          group.indices.map[[group]]=counter
+          aggregated[,counter]=apply(abundances[,group.member.indices],1,median) # compute median row-wise
+        }else if(aggregate == "mean"){
+          group.indices.map[[group]]=counter
+          aggregated[,counter]=apply(abundances[,group.member.indices],1,mean) # compute mean row-wise
+        }
       }
       counter = counter +1
     } # end loop groups
@@ -110,11 +134,10 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
     }else{
       indices=unlist(group.indices.map)
     }
-    if(aggregate == "none"){
+    if(aggregate == "none" || sumGroupwise){
       abundances=abundances[,indices]
       groups=groups[indices]
     }else{
-      #print(indices)
       abundances=aggregated[,indices]
       if(length(group.order)>0){
         groups=group.order
@@ -124,8 +147,6 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
       colnames(abundances)=groups
     } # aggregate is not none
   } # sort group-wise
-
-  #print(colSums(abundances))
 
   hidden.taxa=NULL
   if(length(hide.taxa)>0){
@@ -141,7 +162,54 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
     abundances=abundances[keep.indices,]
   }
 
-  sorted=sortTaxa(abundances,topTaxa=topTaxa)
+  # sum taxa group-wise
+  if(sumGroupwise && groupNum>1){
+      # superabundances has each row as many times as there are groups; +1 for the summed taxon, which is group-specific
+      # this allows to re-sort rows for each group separately but to keep the original colors (by duplicating colors)
+      # values for samples not in the group will be set to 0 (NA does not work with barplot)
+      superabundances=matrix(0,nrow=length(unique(groups))*(topTaxa+1),ncol=ncol(abundances))
+      if(aggregate != "none"){
+        superabundances=matrix(0,nrow=length(unique(groups))*(topTaxa+1),ncol=length(unique(groups)))
+      }
+      superrownames=c()
+      # loop groups
+      prevRows=0
+      prevCols=0
+      if(aggregate != "none"){
+        prevCols=1
+      }
+      for(group in unique(groups)){
+        group.member.indices=which(groups==group)
+        #print(paste("Group-wise summing: Number of samples in group",group,": ",length(group.member.indices)))
+        sorted.group=sortTaxa(abundances[,group.member.indices], topTaxa = topTaxa)
+        aggregated=c()
+        superrownames=c(superrownames,rownames(sorted.group))
+        if(aggregate != "none"){
+          if(aggregate=="mean"){
+            aggregated=apply(sorted.group,1,mean) # compute mean row-wise
+          }else if(aggregate=="median"){
+            aggregated=apply(sorted.group,1,median) # compute median row-wise
+          }
+          print(paste("Top taxa in group", group))
+          print(aggregated)
+          superabundances[(prevRows+1):(prevRows+topTaxa+1),prevCols]=aggregated
+          prevCols=prevCols+1
+        }else{
+          superabundances[(prevRows+1):(prevRows+topTaxa+1),(prevCols+1):(prevCols+ncol(sorted.group))]=sorted.group
+          prevRows=prevRows+topTaxa+1
+          prevCols=prevCols+ncol(sorted.group)
+        }
+      }
+      rownames(superabundances)=superrownames
+      if(aggregate != "none"){
+        colnames(superabundances)=unique(groups)
+      }else{
+        colnames(superabundances)=colnames(abundances)
+      }
+  }else{
+    sorted=sortTaxa(abundances,topTaxa=topTaxa)
+  }
+
   if(length(hide.taxa)>0){
     other.index=which(rownames(sorted)=="Others")
     if(length(other.index)>0){
@@ -153,9 +221,17 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
     }
   }
 
-  color.res=getColorVectorGivenTaxaAndColorMap(rownames(sorted),taxon.color.map = taxon.color.map, summedTaxonColor = summedTaxonColor, extendColorMap = extendTaxonColorMap)
-  taxon.color.map=color.res$colormap
-  taxon.colors=color.res$colors
+  if(sumGroupwise){
+    sorted=superabundances
+    color.res=getColorVectorGivenTaxaAndColorMap(rownames(sorted),taxon.color.map = taxon.color.map, summedTaxonColor = summedTaxonColor, extendColorMap = extendTaxonColorMap, sumGroupwise = TRUE)
+    taxon.color.map=color.res$colormap
+    taxon.colors=color.res$colors
+  }else{
+    color.res=getColorVectorGivenTaxaAndColorMap(rownames(sorted),taxon.color.map = taxon.color.map, summedTaxonColor = summedTaxonColor, extendColorMap = extendTaxonColorMap)
+    taxon.color.map=color.res$colormap
+    taxon.colors=color.res$colors
+  }
+
 
   # add margin for the legend
   maxchars=0
@@ -193,7 +269,14 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
 
   # add the legend
   if(legend==TRUE){
-    legend(x="topleft",inset=c(legend.shift,0),legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)
+    # found in: https://stackoverflow.com/questions/42075751/calculating-the-appropriate-inset-value-for-legends-automatically
+    coord=par("usr")
+    if(sumGroupwise){
+      legend(x=coord[2]*legend.shift,y=coord[4],legend=unique(rownames(sorted)),cex=0.8, bg = "white", text.col=unique(taxon.colors))
+    }else{
+      legend(x=coord[2]*legend.shift,y=coord[4],legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)
+    }
+    #legend(x="topleft",inset=c(legend.shift,0),legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)
     #legend(updated.mar[4]*(legend.shift/mar.scale),1,legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors,xpd=TRUE)
     if(groupNum>1 && legend.hidegroups==FALSE){
       legend(x="bottomleft",inset=c(legend.shift,0),legend=unique(groups),cex=0.8,bg="white", text.col=unique(group.colors))
@@ -235,7 +318,7 @@ sortTaxa<-function(xgroup, topTaxa=0){
 
 # return a color object with a vector of colors as first entry and a color map as second entry
 # given a list of taxon names and optionally a predefined color map
-getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=list(), summedTaxonColor="#a9a9a9", extendColorMap=FALSE){
+getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=list(), summedTaxonColor="#a9a9a9", extendColorMap=FALSE, sumGroupwise=FALSE){
   res=list()
   colorMapProvided=TRUE
   # check if taxon color map was provided and initialise one if not
@@ -244,10 +327,29 @@ getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=li
     taxon.color.map=list()
   }
   colornumber=length(namesTopTaxa)
+  if(sumGroupwise){
+    # determine how many non-overlapping top taxa there are
+    colornumber=length(unique(namesTopTaxa))
+    if("Others" %in% namesTopTaxa){
+      colornumber=colornumber-1
+    }
+  }
   col.vec = seq(0,1,1/colornumber)
   my.colors = hsv(col.vec)
   colors=c()
   color.index=1
+
+  if(sumGroupwise && !colorMapProvided){
+    # a color map is needed to deal with multiple assignments
+    color.counter=1
+    for(name in namesTopTaxa){
+      if(!(name %in% names(taxon.color.map)) && !(name=="Others")){
+        taxon.color.map[[name]]=my.colors[color.counter]
+        color.counter=color.counter+1
+      }
+    }
+    colorMapProvided=TRUE
+  } # deal with overlapping names
 
   if(extendColorMap){
     # generate additional colors if needed
@@ -274,8 +376,12 @@ getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=li
     # gray color for non-top taxa
     taxon.color.map[["Others"]]=summedTaxonColor
   }
+
+  #print(taxon.color.map)
+
   # loop top taxa
   for(name in namesTopTaxa){
+    #print(name)
     # no taxon color map provided: color is taken from color vector
     if(!colorMapProvided){
       if(name!="Others"){
@@ -290,7 +396,7 @@ getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=li
     else{
       # taxon found in color map
       if(name %in% names(taxon.color.map)){
-        #print(paste("Found color",colormap[[name]],"for name",name))
+        #print(paste("Found color",taxon.color.map[[name]],"for name",name))
         colors=c(colors,taxon.color.map[[name]])
       }else{
         # taxon not found, but extend is true
@@ -312,6 +418,8 @@ getColorVectorGivenTaxaAndColorMap<-function(namesTopTaxa=c(),taxon.color.map=li
       } # taxon absent from color map
     } # color map provided
   }# loop taxa
+  #print(namesTopTaxa)
+  #print(colors)
   res[["colors"]]=colors
   res[["colormap"]]=taxon.color.map
   return(res)

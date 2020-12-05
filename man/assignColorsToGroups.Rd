@@ -8,7 +8,8 @@ assignColorsToGroups(
   groups,
   refName = "ref",
   myColors = NULL,
-  returnMap = FALSE
+  returnMap = FALSE,
+  hiddenSamples = c()
 )
 }
 \arguments{
@@ -16,9 +17,11 @@ assignColorsToGroups(
 
 \item{refName}{the name of the reference group; receives gray as a color}
 
-\item{myColors}{a map of predefined colors for groups}
+\item{myColors}{an optional map of predefined colors for groups}
 
 \item{returnMap}{whether to return the color map together with the colors}
+
+\item{hiddenSamples}{optional vector of indices of samples to be hidden; these are assigned an invisible color}
 }
 \value{
 a vector of colors; if returnMap is true, a vector of colors and the color map

@@ -18,7 +18,7 @@
 #' compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="UC",group2="Control")
 #' groups[groups=="UC"]="IBD"
 #' groups[groups=="CD"]="IBD"
-#' # Faecalibacterium is significantly more abundant in the control group
+#' # Faecalibacterium has a significantly higher relative abundance in the control group
 #' compareDistribs(ibd_taxa,taxon=taxon,groups=groups,group1="IBD",group2="Control")
 #' @export
 compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1=as.character(group1), name2=as.character(group2)){

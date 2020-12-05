@@ -9,7 +9,9 @@ aggregateTaxa(
   lineages,
   taxon.level = "class",
   unknown = c(NA, "unclassified"),
-  keepSumUnknown = FALSE
+  keepUnknown = FALSE,
+  keepSumUnknown = FALSE,
+  returnLineages = FALSE
 )
 }
 \arguments{
@@ -21,9 +23,21 @@ aggregateTaxa(
 
 \item{unknown}{descriptors for unclassified taxa}
 
+\item{keepUnknown}{keep taxa without higher-level taxon classification; cannot be used together with keepSumUnknown}
+
 \item{keepSumUnknown}{keep the sum of taxa without higher-level taxon classification on the desired level as last row (row name: sumUnknown)}
+
+\item{returnLineages}{return lineage matrix for higher-level taxon matrix; if true a list is returned with two elements: abundances and lineages}
+}
+\value{
+the aggregated abundance matrix; if returnLineages is true, a list with aggregated abundances and matching lineages
 }
 \description{
 Given a taxon and a lineage matrix, aggregate taxa belonging to the same
 higher-level taxon at the specified taxonomic level by summing their abundance.
+}
+\examples{
+data("ibd_taxa")
+data("ibd_lineages")
+ibd_class=aggregateTaxa(x=ibd_taxa,lineages=ibd_lineages)
 }

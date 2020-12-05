@@ -33,6 +33,7 @@ seqPCoA(
   centroidFactor = 1,
   taxonColor = "brown",
   metadataColor = "blue",
+  hideGroupLegend = FALSE,
   drawEllipse = FALSE,
   ellipseOnClusters = FALSE,
   ellipseColorMap = NULL,
@@ -66,9 +67,9 @@ seqPCoA(
 
 \item{groups}{an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided}
 
-\item{groupColors}{an optional map of predefined colors for groups that matches names in groups (which should be strings); if reference is provided, refName is added if absent}
+\item{groupColors}{an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent}
 
-\item{colors}{an optional vector of colors to be used to color samples; it overrides groupColors if provided}
+\item{colors}{an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided}
 
 \item{clusters}{an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)}
 
@@ -105,6 +106,8 @@ seqPCoA(
 \item{taxonColor}{the color of the taxon arrows and text}
 
 \item{metadataColor}{the color of the metadata arrows and text}
+
+\item{hideGroupLegend}{do not show the group legend}
 
 \item{drawEllipse}{if groups or groupAttrib given, draw polygons encapsulating groups using vegan's ordiellipse function (kind is sd, conf given via ellipseConf); print adonis R2 and p-value (permutation number given via env.permut)}
 

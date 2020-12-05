@@ -8,23 +8,29 @@
 
 <title>Build a microbial network — buildNetwork • seqgroup</title>
 
+
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -32,8 +38,8 @@
 
 
 
-<meta property="og:title" content="Build a microbial network — buildNetwork" />
 
+<meta property="og:title" content="Build a microbial network — buildNetwork" />
 <meta property="og:description" content="Wrapper for microbial network inference methods.
 SPIEC-EASI, CoNet (see function barebonesCoNet) and bnlearn are supported.
 Abundances are assumed to have been already filtered and transformed.
@@ -41,7 +47,7 @@ The function returns the network as an igraph object,
 with nodes labeled and colored at the selected taxonomic levels
 and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 represent negative or positive associations." />
-<meta name="twitter:card" content="summary" />
+
 
 
 
@@ -58,7 +64,7 @@ represent negative or positive associations." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -100,7 +106,6 @@ represent negative or positive associations." />
   </ul>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         
       </ul>
@@ -122,7 +127,6 @@ represent negative or positive associations." />
     </div>
 
     <div class="ref-description">
-    
     <p>Wrapper for microbial network inference methods.
 SPIEC-EASI, CoNet (see function <code><a href='barebonesCoNet.html'>barebonesCoNet</a></code>) and bnlearn are supported.
 Abundances are assumed to have been already filtered and transformed.
@@ -130,15 +134,29 @@ The function returns the network as an igraph object,
 with nodes labeled and colored at the selected taxonomic levels
 and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 represent negative or positive associations.</p>
-    
     </div>
 
-    <pre class="usage"><span class='fu'>buildNetwork</span>(<span class='no'>abundances</span>, <span class='kw'>lineages</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"mb"</span>, <span class='kw'>repNum</span> <span class='kw'>=</span> <span class='fl'>20</span>,
-  <span class='kw'>minStrength</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>renorm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>initEdgeNum</span> <span class='kw'>=</span> <span class='fl'>100</span>, <span class='kw'>methodNum</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>directed</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>nameLevel</span> <span class='kw'>=</span> <span class='st'>"Genus"</span>, <span class='kw'>colorLevel</span> <span class='kw'>=</span> <span class='st'>"Class"</span>, <span class='kw'>widthFactor</span> <span class='kw'>=</span> <span class='fl'>10</span>,
-  <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>left.margin</span> <span class='kw'>=</span> <span class='fl'>10</span>)</pre>
-    
+    <pre class="usage"><span class='fu'>buildNetwork</span>(
+  <span class='no'>abundances</span>,
+  <span class='kw'>lineages</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>min.occ</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='kw'>norm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>clr</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"mb"</span>,
+  <span class='kw'>repNum</span> <span class='kw'>=</span> <span class='fl'>20</span>,
+  <span class='kw'>minStrength</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
+  <span class='kw'>renorm</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>initEdgeNum</span> <span class='kw'>=</span> <span class='fl'>100</span>,
+  <span class='kw'>methodNum</span> <span class='kw'>=</span> <span class='fl'>2</span>,
+  <span class='kw'>directed</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>nameLevel</span> <span class='kw'>=</span> <span class='st'>"Genus"</span>,
+  <span class='kw'>colorLevel</span> <span class='kw'>=</span> <span class='st'>"Class"</span>,
+  <span class='kw'>widthFactor</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='kw'>legend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>left.margin</span> <span class='kw'>=</span> <span class='fl'>10</span>
+)</pre>
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -149,6 +167,18 @@ represent negative or positive associations.</p>
     <tr>
       <th>lineages</th>
       <td><p>a matrix with lineages where row names match row names of abundances; first column gives kingdom, following columns give phylum, class, order, family, genus and species (obligatory for SPIEC-EASI)</p></td>
+    </tr>
+    <tr>
+      <th>min.occ</th>
+      <td><p>only keep rows with at least the given number of non-zero values, keep the sum of the other rows (carried out before network construction)</p></td>
+    </tr>
+    <tr>
+      <th>norm</th>
+      <td><p>normalize matrix (carrried out after filtering); not carried out for SPIEC-EASI (where it is already applied)</p></td>
+    </tr>
+    <tr>
+      <th>clr</th>
+      <td><p>apply CLR transform (after filtering and normalization; <code><a href='clr.html'>clr</a></code> with omit.zeros true); not carried out for SPIEC-EASI (already applied)</p></td>
     </tr>
     <tr>
       <th>method</th>
@@ -203,11 +233,10 @@ represent negative or positive associations.</p>
       <td><p>if lineages are provided and legend is true: set the left margin (the margin is restored to its previous value afterwards)</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>igraph object</p>
-    
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>For SPIEC-EASI, edge width represents the abolute of the regression coefficients, whereas for bnlearn,
@@ -226,7 +255,6 @@ of directed graphs. SPIEC-EASI methods tend to be faster than bnlearn methods.
 The returned network can be visualized with igraph's interactive network visualisation
 function tkplot or simply with igraph's plot function. When RCy3 is installed and Cytoscape is open,
 the graph can also be sent to Cytoscape directly with RCy3's function createNetworkFromIgraph().</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span>(<span class='no'>ibd_taxa</span>)
@@ -278,18 +306,10 @@ the graph can also be sent to Cytoscape directly with RCy3's function createNetw
 #&gt; [1] "AIC: 8017.57779267286"
 #&gt; [1] "BIC: 7892.79736287917"</div><div class='img'><img src='buildNetwork-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>hc.out</span>)</div><div class='img'><img src='buildNetwork-2.png' alt='' width='700' height='433' /></div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      
-      <li><a href="#value">Value</a></li>
-
-      <li><a href="#details">Details</a></li>
-      
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -300,7 +320,7 @@ the graph can also be sent to Cytoscape directly with RCy3's function createNetw
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.0.</p>
 </div>
 
       </footer>
