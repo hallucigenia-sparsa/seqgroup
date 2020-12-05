@@ -552,13 +552,21 @@ computeSignMatrix<-function(scores, method="bray"){
   return(sign.matrix)
 }
 
-# correct a pvalue matrix for multiple testing with Benjamini-Hochberg
-# only the lower p-value matrix is corrected, but only the lower will be used
+# Internal function
+# Correct a pvalue matrix for multiple testing with Benjamini-Hochberg
+# Only the selected triangle will be corrected.
+# Barebones CoNet will only use the lower triangle
 # to build the graph from the adjacency matrix
-correctPvalMatrix<-function(pvals){
-  pvec=pvals[lower.tri(pvals)]
-  pvec=p.adjust(pvec,method="BH") # p.adjust keeps NA at the original place
-  pvals[lower.tri(pvals)]=pvec
+correctPvalMatrix<-function(pvals, method="BH", lowerTriangle=TRUE){
+  if(lowerTriangle){
+    pvec=pvals[lower.tri(pvals)]
+    pvec=p.adjust(pvec,method=method) # p.adjust keeps NA at the original place
+    pvals[lower.tri(pvals)]=pvec
+  }else{
+    pvec=pvals[upper.tri(pvals)]
+    pvec=p.adjust(pvec,method=method)
+    pvals[upper.tri(pvals)]=pvec
+  }
   return(pvals)
 }
 

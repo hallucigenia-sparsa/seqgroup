@@ -6,5 +6,4 @@ warnings_are_errors: false
 r: bioc-release
 r_github_packages:
   - zdk123/SpiecEasi
-before_install:
-  - sudo apt-get install gsl-bin libgsl0-dev
+before_install: travis_wait sudo apt-get install gsl-bin libgsl0-dev

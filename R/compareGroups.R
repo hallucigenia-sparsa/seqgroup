@@ -2,9 +2,10 @@
 #' @description The function allows to compare richness, evenness, alpha diversity and beta diversity across groups, where
 #' beta diversity can be assessed with both a Bray Curtis distribution or overdispersion from a Dirichlet-Multinomial distribution fit.
 #' By default, groups are subsampled to the same sample number, for this reason the output of the same run can differ. To switch off this
-#' behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan.
+#' behaviour, subsample can be set to false. Chao1 and Shannon diversity are computed with vegan. The Taylor law is computed taxon-wise
+#' as the slope of the regression line for the logarithm of the mean abundance of taxa and the logarithm of the variance of taxa.
 #' @param abundances a matrix with taxa as rows and samples as columns
-#' @param property richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index) or beta (beta-diversity)
+#' @param property richness (Chao1), evenness (Sheldon), alpha (alpha-diversity with Shannon index), beta (beta-diversity), taylor (slope of the Taylor law)
 #' @param method for beta-diversity, dissim (Bray Curtis dissimilarities) and DM (estimation of theta with package dirmult) are supported
 #' @param groups group membership vector with as many entries as samples in abundances
 #' @param colors optional color vector with as many entries as (unique) groups (only for plot.type pergroup)
@@ -16,7 +17,8 @@
 #' @param rowNorm for beta diversity with method dissim: normalize the abundances row-wise
 #' @param subsample subsample groups randomly to have the same sample number in each group; for plot type intravsinter, it equalises in additon the number of pairs within and between groups
 #' @param xlab the x axis label
-#' @param pvalViz if true and avg is set to none and plot.type is pergroup, significant Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr
+#' @param pvalViz if true and avg is set to none and plot.type is pergroup, Wilcoxon p-values are displayed on the violin plot using function stat_compare_means in R package ggpubr
+#' @param pAdjMethod multiple testing correction method to use for p-value plotting (values are those accepted by p.adjust)
 #' @param returnValues if true, return properties
 #' @return if returnValues is true, properties are returned
 #' @examples
@@ -34,7 +36,7 @@
 #' col=age.col$colors
 #' compareGroups(floresgut_taxa,groups=groups,property="alpha",colors=col,colorMap=age.col$colormap)
 #' @export
-compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), colors=c(), colorMap=NULL, plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE, returnValues=FALSE){
+compareGroups<-function(abundances, property="beta", method="dissim", groups=c(), colors=c(), colorMap=NULL, plot.type="pergroup", avg="none", all=FALSE, noSameGroup=TRUE, rowNorm=FALSE, subsample=TRUE, xlab="", pvalViz=FALSE, pAdjMethod="BH", returnValues=FALSE){
   supported.properties=c("richness","evenness","alpha","beta")
   if(plot.type=="intravsinter" && property!="beta"){
     stop("The intravsinter plot type is only supported for beta diversity!")
@@ -108,7 +110,8 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
     colors=c("black")
   }
 
-
+  pseudo=min(abundances[abundances>0])/100 # to take logarithm for Taylor law
+  #print(paste("pseudo:",pseudo))
   # computing intra-group variability
   groups.with.theta=c()
   interdissim=c()
@@ -184,6 +187,19 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
       else{
         warning(paste("Group",group,"has less than 2 samples: cannot compute beta diversity."))
       }
+    }else if(property=="taylor"){
+      main="Taylor law slope"
+      ylab="Slope"
+      means=apply(group.data,1, mean, na.rm=TRUE) # compute taxon-wise
+      vars=apply(group.data,1, var, na.rm=TRUE)
+      logvars=log(vars+pseudo)
+      logmeans=log(means+pseudo)
+      reg.data=data.frame(logvars,logmeans)
+      linreg = lm(formula = logvars~logmeans)
+      # print(paste("Intercept:",linreg$coefficients[1]))
+      # print(paste("Slope:",linreg$coefficients[2]))
+      slope=linreg$coefficients[2]
+      intradissim=c(intradissim, slope)
     }else if(property=="alpha" || property=="richness" || property=="evenness"){
       for(sample.index in 1:ncol(group.data)){
         if(property=="alpha"){
@@ -261,6 +277,12 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
       range=c(0,max(thetas))
       res=thetas
       compareGroupsPlot(mat=thetas, labels=names.arg, xlab=xlab, ylab="Theta", main="Estimated overdispersion", range=range, plotType = "bar",colors=colors, las=las, colorMap=colorMap)
+    }else if(property=="taylor"){
+      range=c(min(intradissim),max(intradissim)) # slope can be negative
+      if(min(intradissim)>0){
+        range=c(0,max(intradissim))
+      }
+      compareGroupsPlot(mat=intradissim, labels=unique.groups, xlab=xlab, ylab=ylab, main=main, range=range, plotType = "bar",colors=colors, las=las, colorMap=colorMap)
     }else{
       if(avg!="none"){
         names(groupspecavgprops)=unique.groups
@@ -291,34 +313,25 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
         res=mat
         # display box plot with p-values
         if(pvalViz){
-          #df=as.data.frame(mat)
           combinations=list()
           units=colnames(mat)
+          # go through upper triangle
           for(index1 in 1:(length(units)-1)){
             for(index2 in (index1+1):length(units)){
               unit1=units[index1]
               unit2=units[index2]
-              # two-sided, unpaired Wilcoxon test
               val1=unique(mat[,index1])
               val2=unique(mat[,index2])
-              isProblem=FALSE
-              if((length(val1)==1 && is.na(val1)) || (length(val2)==1 && is.na(val2))){
-                isProblem=TRUE
-              }
+              combi=paste(unit1,unit2,sep="")
               # avoid result only consisting of missing values (e.g. if group has only 1 sample)
-              if(!isProblem){
-                w.out=wilcox.test(mat[,index1],mat[,index2])
+              if((length(val1)==1 && is.na(val1)) || (length(val2)==1 && is.na(val2))){
+                print("Skipping group combination",combi,"because one group contains missing values or has only 1 sample")
               }else{
-                w.out$p.value=0.5
-              }
-              if(w.out$p.value<0.05){
-                #print(w.out$p.value)
-                combinations[[paste(unit1,unit2,sep="")]]=c(unit1,unit2)
+                combinations[[combi]]=c(unit1,unit2)
               }
             }
           }
-          print(paste("Number of significant differences in property",property,"across groups:",length(combinations)))
-          compareGroupsPlot(mat=mat, groups=groups, colors=colors, combinations=combinations, xlab=xlab, ylab=ylab, main=main, plotType = "pvalues")
+          compareGroupsPlot(mat=mat, groups=groups, colors=colors, combinations=combinations, pAdjMethod = pAdjMethod, xlab=xlab, ylab=ylab, main=main, plotType = "pvalues")
         }else{
           # alternative plot type: box, violin
           compareGroupsPlot(mat=mat, xlab=xlab, ylab=ylab, groups=groups, main=main, colors=colors, las=las, colorMap=colorMap, plotType = "violin")
@@ -374,10 +387,11 @@ compareGroups<-function(abundances, property="beta", method="dissim", groups=c()
 # labels: bar plot labels
 # colors: bar/box color
 # combinations: for pvalue plots
+# pAdjMethod: multiple testing correction method for pvalue plots
 # las: orientation of axis labels
 # plotType: box, bar, pvalues or violin
 # colorMap: color map for a metadata item, adds color legend
-compareGroupsPlot<-function(mat, xlab="", ylab="", range=c(), main="", groups=c(), labels=c(), colors=c(), combinations=c(), las=1, plotType="box", colorMap=NULL){
+compareGroupsPlot<-function(mat, xlab="", ylab="", range=c(), main="", groups=c(), labels=c(), colors=c(), combinations=c(), pAdjMethod="BH", las=1, plotType="box", colorMap=NULL){
 
   legend.colors=c()
   if(!is.null(colorMap)){
@@ -434,11 +448,11 @@ compareGroupsPlot<-function(mat, xlab="", ylab="", range=c(), main="", groups=c(
     if(plotType=="pvalues"){
       # cannot set ylim, else p-values are not plotted correctly
       if(!is.null(colorMap)){
-        p <- ggplot(df_melt_extended, aes(variable, value, fill=color))+geom_violin()+ ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
+        p <- ggplot(df_melt_extended, aes(variable, value, fill=color))+geom_violin()+ ggpubr::stat_compare_means(comparisons=combinations, p.adjust.method = pAdjMethod)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
         plot(p)
       }else{
         # geom_jitter(position = position_jitter(0.2))
-        p <- ggplot(df_melt, aes(variable, value, fill=variable))+ guides(fill=FALSE) +geom_violin(show.legend=FALSE)+ scale_fill_manual(values=colors) + ggpubr::stat_compare_means(comparisons=combinations)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
+        p <- ggplot(df_melt, aes(variable, value, fill=variable))+ guides(fill=FALSE) +geom_violin(show.legend=FALSE)+ scale_fill_manual(values=colors) + ggpubr::stat_compare_means(comparisons=combinations, p.adjust.method = pAdjMethod)+xlab(xlab)+ylab(ylab)+ggtitle(main) +  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # 90 degree x axis test
         plot(p)
       }
     }else{
