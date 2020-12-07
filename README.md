@@ -37,7 +37,7 @@ For a tour of seqtime, see the [overview vignette](https://hallucigenia-sparsa.g
 
 [![Travis-CI Build Status](https://travis-ci.org/hallucigenia-sparsa/seqgroup.svg?branch=master)](https://travis-ci.org/hallucigenia-sparsa/seqgroup)
 
-[![HitCount](http://hits.dwyl.io/hallucigenia-sparsa/seqgroup.svg)](http://hits.dwyl.io/hallucigenia-sparsa/seqgroup)
+[![HitCount](http://hits.dwyl.com/hallucigenia-sparsa/seqgroup.svg)](http://hits.dwyl.com/hallucigenia-sparsa/seqgroup)
 
 ### Contribute
 
