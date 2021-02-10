@@ -32,7 +32,7 @@
 #' @param refName group name for reference samples
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
-#' @param groups an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided
+#' @param groups an optional vector that provides for each sample its group membership in the same order as samples are given in abundances; overridden by groupAttrib
 #' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent
 #' @param colors an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided
 #' @param clusters an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)
@@ -436,6 +436,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       warning("Please specify groups in order to draw ellipses!")
     }else{
       show.groups=unique(groups[selected.sample.indices])
+      #print(show.groups)
       # draw transparent ellipses around samples of the same groups with given confidence
       # by default, color order is not correct, because ordiellipse calls factor on the groups, which sorts entries alphabetically
       # for this reason, factor with correct ordering is reassigned to groups
@@ -443,9 +444,11 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       #ordiellipse(pcoa.res,scaling=0,groups=groups.factor,draw="polygon",col=unique(colors),alpha=0.25,conf=ellipseConf,lwd=0.5, kind="sd", border=0)
       # color border rather than ellipse itself
       if(ellipseOnClusters && length(clusters)>0){
+        show.groups=unique(clusters[selected.sample.indices])
         cluster.factor=factor(clusters,levels=unique(clusters))
         if(!is.null(ellipseColorMap)){
           cluster.colors=assignColorsToGroups(clusters, refName = refName, myColors = ellipseColorMap)
+          #print(unique(cluster.colors))
         }else{
           cluster.colors=assignColorsToGroups(clusters, refName = refName)
         }
