@@ -16,7 +16,9 @@ env:
      - R_BUILD_ARGS="--no-build-vignettes --no-manual"
 
 warnings_are_errors: false
-r: 4.2.1
+#r: 4.2.1
+r:
+  - release
 
 r_github_packages:
   - zdk123/SpiecEasi
