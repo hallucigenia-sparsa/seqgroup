@@ -26,5 +26,6 @@ install:
   - Rscript -e "if (!requireNamespace('renv', quietly = TRUE)) install.packages('renv')"
   - Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
 #  - Rscript -e "BiocManager::install(version='3.10')"
+  - Rscript -e "BiocManager::install('BiocVersion')"
   - Rscript -e "renv::restore()"
 
