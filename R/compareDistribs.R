@@ -34,26 +34,19 @@ compareDistribs<-function(x, taxon, groups=c(), group1=1, group2=2, name1=as.cha
   abundances1=as.numeric(x[index,indices.group1])
   abundances2=as.numeric(x[index,indices.group2])
   w.out=wilcox.test(abundances1,abundances2)
-  col1=rgb(0,1,0,0.5)
-  col2=rgb(1,0,0,0.5)
-  # limits
-  xmax=max(abundances1,na.rm=TRUE)
-  xmin=min(abundances1,na.rm=TRUE)
-  ymax=max(abundances2,na.rm=TRUE)
-  ymin=min(abundances2,na.rm=TRUE)
-  max=max(xmax,ymax)
-  min=min(ymin,xmin)
-  xmaxD=max(hist(abundances1,breaks="FD",plot=FALSE)$density)
-  ymaxD=max(hist(abundances2,breaks="FD",plot=FALSE)$density)
-  maxD=max(xmaxD,ymaxD)
-  #maxD=maxD+0.5 # add a margin
   title=paste(rownames(x)[index],", \nWilcoxon p-value:",round(w.out$p.value,3),sep="")
-  hist(abundances1,breaks="FD",xlim=c(min,max), ylim=c(0,maxD), prob=TRUE,col=col1, border=col1,xlab="Abundance", main=title)
-  hist(abundances2,breaks="FD",prob=TRUE,col=col2, border=col2,add=TRUE)
-  legend("right",legend=c(name1,name2), lty = rep(1,2), col = c(col1,col2), merge = TRUE, bg = "white", text.col="black")
+  compareDistribsPure(values1=abundances1, values2=abundances2, name1=name1,name2=name2, main=title, displayW=FALSE)
 }
 
-compareDistribsPure<-function(values1,values2, main="Comparison", name1="", name2="", xlab="Abundance", legend.position="topright"){
+# values1: first distribution
+# values2: second distribution
+# name1: name of first distribution
+# name2: name of second distribution
+# xlab: x axis label
+# legend.position: position of the legend
+# breaks: breaks to use for hist
+# displayW: append Wilcoxon p-value to main
+compareDistribsPure<-function(values1,values2, main="Comparison", name1="", name2="", xlab="Abundance", legend.position="topright", breaks="FD", displayW=TRUE){
   w.out=wilcox.test(values1,values2)
   col1=rgb(0,1,0,0.5)
   col2=rgb(1,0,0,0.5)
@@ -64,12 +57,20 @@ compareDistribsPure<-function(values1,values2, main="Comparison", name1="", name
   ymin=min(values2,na.rm=TRUE)
   max=max(xmax,ymax)
   min=min(ymin,xmin)
-  xmaxD=max(hist(values1,breaks="FD",plot=FALSE)$density)
-  ymaxD=max(hist(values2,breaks="FD",plot=FALSE)$density)
+  xmaxD=max(hist(values1,breaks=breaks,plot=FALSE)$density)
+  ymaxD=max(hist(values2,breaks=breaks,plot=FALSE)$density)
   maxD=max(xmaxD,ymaxD)
   #maxD=maxD+0.5 # add a margin
-  title=paste(main,", \nWilcoxon p-value:",round(w.out$p.value,3),sep="")
-  hist(values1,breaks="FD",xlim=c(min,max), ylim=c(0,maxD), prob=TRUE,col=col1, border=col1,xlab=xlab, main=title)
-  hist(values2,breaks="FD",prob=TRUE,col=col2, border=col2,add=TRUE)
+  if(displayW){
+    if(nzchar(main)){
+      title=paste(main,", \nWilcoxon p-value:",round(w.out$p.value,3),sep="")
+    }else{
+      title=paste("Wilcoxon p-value:",round(w.out$p.value,3),sep="")
+    }
+  }else{
+    title=main
+  }
+  hist(values1,breaks=breaks,xlim=c(min,max), ylim=c(0,maxD), prob=TRUE,col=col1, border=col1,xlab=xlab, main=title)
+  hist(values2,breaks=breaks,prob=TRUE,col=col2, border=col2,add=TRUE)
   legend(legend.position,legend=c(name1,name2), lty = rep(1,2), col = c(col1,col2), merge = TRUE, bg = "white", text.col="black")
 }

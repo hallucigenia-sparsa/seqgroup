@@ -5,7 +5,7 @@
 \alias{floresgut_lineages}
 \title{Lineages for gut taxa from Flores et al.}
 \format{
-An object of class \code{matrix} with 323 rows and 7 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 323 rows and 7 columns.
 }
 \usage{
 data(floresgut_lineages)

@@ -8,6 +8,9 @@
 #' @return an index vector with the updated sample order
 #' @export
 sortSamples<-function(abundances, groups=c(), time=c(), alphabetical=FALSE){
+  if(!is.character(groups)){
+    groups=as.character(groups)
+  }
   updated.index.order=c()
   unique.groups=unique(groups)
   if(alphabetical){

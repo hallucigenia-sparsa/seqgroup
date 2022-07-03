@@ -45,7 +45,7 @@ barebonesCoNet(
 
 \item{pval.T}{threshold on p-value (only used when permut, permutandboot or pval.cor is true); if several methods are provided, only applied after merge}
 
-\item{init.edge.num}{the number of top and bottom initial edges (init.edge.num overrides T.up/T.down, set to NA to respect T.up/T.down for a single method)}
+\item{init.edge.num}{the number of top and bottom initial edges, can be set to "all" to cover all possible edges (init.edge.num overrides T.up/T.down, set to NA to use T.up/T.down for a single method)}
 
 \item{min.occ}{only keep rows with at least the given number of non-zero values (carried out before network construction)}
 

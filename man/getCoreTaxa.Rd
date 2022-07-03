@@ -4,7 +4,13 @@
 \alias{getCoreTaxa}
 \title{List core taxa across groups}
 \usage{
-getCoreTaxa(x, groups = c(), min.occ = 1)
+getCoreTaxa(
+  x,
+  groups = c(),
+  min.occ = 1,
+  min.groupnum = length(unique(groups)),
+  consecutive = FALSE
+)
 }
 \arguments{
 \item{x}{an abundance matrix where rows are taxa and columns samples}
@@ -12,6 +18,10 @@ getCoreTaxa(x, groups = c(), min.occ = 1)
 \item{groups}{group membership vector with as many entries as abundances has samples}
 
 \item{min.occ}{minimal occurrence to count a taxon as present in each group}
+
+\item{min.groupnum}{minimum occurrence across groups (fulfilling selected criteria within each group), by default in all}
+
+\item{consecutive}{assumes samples in each group are ordered by time, if true, minimal occurrence has to be consecutive}
 }
 \value{
 indices of core taxa
@@ -20,7 +30,9 @@ indices of core taxa
 List the indices of all taxa that occur at least min.occ times in each group.
 }
 \examples{
-abundances=cbind(c(1,2,2),c(0,1,1),c(0,0,3))
-rownames(abundances)=c("taxon1","taxon2","taxon3")
-rownames(abundances)[getCoreTaxa(abundances,groups=c(1,2,3))]
+data("floresgut_taxa")
+data("floresgut_metadata")
+groups=floresgut_metadata$host_subject_id
+ct=getCoreTaxa(x=floresgut_taxa,groups=groups,consecutive=TRUE, min.occ=4)
+rownames(floresgut_taxa)[ct]
 }

@@ -24,7 +24,7 @@
 #' @param T.down lower threshold for scores (when more than one network construction method is provided, init.edge.num is given and/or p-values are computed, T.down is ignored)
 #' @param method.num.T threshold on method number (only used when more than one method is provided)
 #' @param pval.T threshold on p-value (only used when permut, permutandboot or pval.cor is true); if several methods are provided, only applied after merge
-#' @param init.edge.num the number of top and bottom initial edges (init.edge.num overrides T.up/T.down, set to NA to respect T.up/T.down for a single method)
+#' @param init.edge.num the number of top and bottom initial edges, can be set to "all" to cover all possible edges (init.edge.num overrides T.up/T.down, set to NA to use T.up/T.down for a single method)
 #' @param min.occ only keep rows with at least the given number of non-zero values (carried out before network construction)
 #' @param keep.filtered sum all filtered rows and add the sum vector as additional row
 #' @param norm normalize matrix (carrried out after filtering)
@@ -64,6 +64,10 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
   resultList=list()
   res.graph=NULL
   total.edge.num=(N*(N-1))/2
+  if(!is.null(metadata)){
+    M=ncol(metadata)
+    total.edge.num=(N*(N-1))/2+(M*(M-1))/2
+  }
   #print(total.edge.num)
   #print(init.edge.num)
   default.init.edge.num=max(2,round(sqrt(N)))
@@ -94,6 +98,10 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
 
   if((permut==TRUE || permutandboot==TRUE) && iters < 1){
     stop("iters should be at least 1.")
+  }
+
+  if(init.edge.num=="all"){
+    init.edge.num=total.edge.num
   }
 
   if(!is.na(T.up) || !is.na(T.down)){
@@ -173,6 +181,9 @@ barebonesCoNet<-function(abundances, metadata=NULL, methods=c("spearman","kld"),
       scorevec=sort(as.vector(scores[lower.tri(scores)]),decreasing = FALSE)
       #print(scorevec[1:10])
       # determine lower threshold
+      if(length(scorevec)<init.edge.num){
+        stop("Number of requested initial edges is larger than total edge number in the network (after filtering with min.occ).")
+      }
       T.down=scorevec[init.edge.num]
       # determine upper threshold
       T.up=scorevec[(length(scorevec)-init.edge.num)]
@@ -435,7 +446,7 @@ computeAssociations<-function(abundances, forbidden.combis=NULL, method="bray", 
           if(is.null(forbidden.combis) || !is.na(forbidden.combis[i,j])){
             # pval.cor takes precedence, but is only applied to correlations
             if(pval.cor == TRUE && method %in% correlations){
-              pvals[i, j] = cor.test(abundances[i,],abundances[j,],method=method)$p.value
+              pvals[i, j] = cor.test(as.numeric(abundances[i,]),as.numeric(abundances[j,]),method=method)$p.value
             }else{
               pvals[i, j] = getPval(abundances, i, j, method=method, N.rand=iters, renorm=renorm, permutandboot=permutandboot, columnwise = columnwise, verbose=verbose,  pseudocount=pseudocount)
               #print(pvals[i,j])

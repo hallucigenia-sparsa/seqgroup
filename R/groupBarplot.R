@@ -33,6 +33,9 @@
 #' @export
 groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.map=NULL, group.color.map=NULL, topTaxa=10, sortGroupwise=TRUE, sumGroupwise=FALSE, group.order=c(), hide.taxa=c(), randSampleNum=NA, summedTaxonColor="#a9a9a9", extendTaxonColorMap=FALSE, legend=TRUE, legend.shift=1, legend.hidegroups=FALSE, ...){
 
+  FORMATDEC=FALSE # print decimals with commmas (by default false, special request)
+  FORMATDECSTEP=1000 # manually selected default for FORMATDEC
+
   if(sumGroupwise && length(groups)==0){
     warning("Can only sum groupwise if groups are provided. Summing groupwise will be ignored.")
     sumGroupwise=FALSE
@@ -254,16 +257,25 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
     group.colors="black"
   }
 
+  yaxtVal='s'
+  if(FORMATDEC){
+    yaxtVal='n'
+  }
+
   # do the bar plot
   # note that ylim removes the margin definition, so is omitted
   # check presence of ylab and add a default if absent
   if(!("ylab" %in% names(match.call(expand.dots=TRUE)))){
-    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',ylab="Abundance",cex.names=0.8, cex.axis=0.8, ...)
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',yaxt=yaxtVal,ylab="Abundance",cex.names=0.8, cex.axis=0.8, ...)
   }else{
-    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',cex.names=0.8, cex.axis=0.8, ...)
+    midpoints=barplot(sorted,col=taxon.colors,xaxt='n',yaxt=yaxtVal,cex.names=0.8, cex.axis=0.8, ...)
   }
   #print(colnames(sorted))
   mtext(colnames(sorted),col=group.colors,side=1, cex=0.8, line=0.5, at=midpoints)
+  if(FORMATDEC){
+    yax.labels=seq(0,max(colSums(sorted)),by=FORMATDECSTEP)
+    axis(2,at=yax.labels,labels=formatC(yax.labels,big.mark = ",", format="fg"), cex.axis=0.7)
+  }
   prev.xpd=par()$xpd
   par(las=1,srt=0,mar=updated.mar, xpd=NA)
 
@@ -274,6 +286,7 @@ groupBarplot<- function(abundances, groups=c(), aggregate="none", taxon.color.ma
     if(sumGroupwise){
       legend(x=coord[2]*legend.shift,y=coord[4],legend=unique(rownames(sorted)),cex=0.8, bg = "white", text.col=unique(taxon.colors))
     }else{
+      #print(rownames(sorted))
       legend(x=coord[2]*legend.shift,y=coord[4],legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)
     }
     #legend(x="topleft",inset=c(legend.shift,0),legend=rownames(sorted),cex=0.8, bg = "white", text.col=taxon.colors)

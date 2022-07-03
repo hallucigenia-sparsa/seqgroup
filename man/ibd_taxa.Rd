@@ -5,7 +5,7 @@
 \alias{ibd_taxa}
 \title{IBD and control taxon abundances from the PRISM cohort}
 \format{
-An object of class \code{matrix} with 201 rows and 155 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 201 rows and 155 columns.
 }
 \usage{
 data(ibd_taxa)

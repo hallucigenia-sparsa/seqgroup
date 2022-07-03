@@ -9,7 +9,8 @@ assignColorsToGroups(
   refName = "ref",
   myColors = NULL,
   returnMap = FALSE,
-  hiddenSamples = c()
+  hiddenSamples = c(),
+  alpha = 1
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ assignColorsToGroups(
 \item{returnMap}{whether to return the color map together with the colors}
 
 \item{hiddenSamples}{optional vector of indices of samples to be hidden; these are assigned an invisible color}
+
+\item{alpha}{transparency level, 0 for most transparent and 1 for most opaque}
 }
 \value{
 a vector of colors; if returnMap is true, a vector of colors and the color map

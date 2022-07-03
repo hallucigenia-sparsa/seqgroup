@@ -75,7 +75,7 @@ and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 represent negative or positive associations.
 }
 \details{
-For SPIEC-EASI, edge width represents the abolute of the regression coefficients, whereas for bnlearn,
+For SPIEC-EASI, edge width represents the absolute of the regression coefficients, whereas for bnlearn,
 it represents the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
 represents absolute association strength, method number supporting an edge or significance,
 depending on whether more than one method was used to compute the network and whether or not

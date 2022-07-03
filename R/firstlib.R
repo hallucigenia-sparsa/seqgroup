@@ -7,6 +7,7 @@
 #' @importFrom vegan eigenvals
 #' @importFrom vegan betadisper
 #' @importFrom vegan ordiellipse
+#' @importFrom vegan ordibar
 #' @importFrom vegan adonis
 #' @importFrom stats TukeyHSD
 #' @importFrom stats cov
@@ -84,6 +85,7 @@
 #' @importFrom DirichletMultinomial goodnessOfFit
 #' @importFrom graphics par
 #' @importFrom graphics plot
+#' @importFrom graphics axis
 #' @importFrom graphics arrows
 #' @importFrom graphics text
 #' @importFrom graphics legend
@@ -95,6 +97,7 @@
 #' @importFrom graphics abline
 #' @importFrom grDevices rgb
 #' @importFrom grDevices hsv
+#' @importFrom graphics identify
 #'
 .onAttach <- function(lib, pkg)
 {

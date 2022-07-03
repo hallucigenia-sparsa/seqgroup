@@ -15,10 +15,13 @@ seqPCoA(
   groups = c(),
   groupColors = NULL,
   colors = c(),
+  timeColors = c(),
   clusters = c(),
   labels = c(),
   sizes = c(),
   size.legend = "",
+  errorbars = c(),
+  errorbarLabels = unique(errorbars),
   time = c(),
   hiddenTaxa = c(),
   hiddenSamples = c(),
@@ -26,8 +29,8 @@ seqPCoA(
   rda = FALSE,
   scale = FALSE,
   doScree = FALSE,
-  topTaxa = 10,
-  topMetadata = 10,
+  topTaxa = round(nrow(abundances)/2),
+  topMetadata = round(nrow(metadata)/2),
   arrowFactor = 0.5,
   metadataFactor = 1,
   centroidFactor = 1,
@@ -47,6 +50,7 @@ seqPCoA(
   qvalThreshold = 0.05,
   ellipseConf = 0.95,
   dimensions = c(1, 2),
+  verbose = FALSE,
   ...
 )
 }
@@ -57,7 +61,7 @@ seqPCoA(
 
 \item{rarefyRef}{rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ}
 
-\item{addToRefStepwise}{compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda or drawEllipse}
+\item{addToRefStepwise}{compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda, errorbars or drawEllipse}
 
 \item{refName}{group name for reference samples}
 
@@ -65,21 +69,27 @@ seqPCoA(
 
 \item{groupAttrib}{optional: the name of a metadata item that refers to a vector that provides for each sample its group membership}
 
-\item{groups}{an optional vector that provides for each sample its group membership and which is overridden by groupAttrib, if provided}
+\item{groups}{an optional vector that provides for each sample its group membership in the same order as samples are given in abundances; overridden by groupAttrib}
 
 \item{groupColors}{an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent}
 
 \item{colors}{an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided}
 
-\item{clusters}{an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)}
+\item{timeColors}{an optional vector of colors for arrows connecting samples interpreted as time points (only relevant when a time vector is supplied)}
+
+\item{clusters}{an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible, not supported for errorbars)}
 
 \item{labels}{an optional vector that provides for each sample a label to display}
 
-\item{sizes}{a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)}
+\item{sizes}{an optional vector that provides for each sample a numeric value that will be displayed as dot size (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)}
 
-\item{size.legend}{a string displayed as a legend for size}
+\item{size.legend}{a string displayed as a legend for size, FALSE suppresses size legend}
 
-\item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)}
+\item{errorbars}{an optional vector with as many entries as samples, defines groups for drawing error bars with ordibar (sd, conf set via ellipseConf); time connect centroids; color/size/group of first sample in error group assigned}
+
+\item{errorbarLabels}{an optional vector with as many entries as groups in errorbars to label centroids; defaults to unique(errorbars); overrides labels (only applies when errorbars vector is supplied)}
+
+\item{time}{an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order; if groups are provided, time should be in ascending order per group)}
 
 \item{hiddenTaxa}{an optional vector with names of taxa to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed among top co-varying taxa)}
 
@@ -131,9 +141,11 @@ seqPCoA(
 
 \item{qvalThreshold}{threshold on multiple-testing corrected top-covarying taxon and envfit p-values}
 
-\item{ellipseConf}{confidence limit for drawEllipse}
+\item{ellipseConf}{confidence limit for drawEllipse and errorbars}
 
 \item{dimensions}{the principal components used for plotting, by default the first and second}
+
+\item{verbose}{print out more information}
 
 \item{\\dots}{Additional arguments passed to plot()}
 }

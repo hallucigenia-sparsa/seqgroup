@@ -1,6 +1,9 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
-# it looks as if packages are restored from CRAN rather than the renv.lock file; may need to indicate renv.lock file in restore
-# travis_wait  before sudo apt-get works, but creates a log file that then results in a note in the R build
+# it looks as if packages are restored from CRAN rather than the renv.lock file; may need to indicate renv.lock file in renv::restore
+# could re-introduce cache: packages
+# travis_wait  before sudo apt-get works, but creates a log file that then results in a note in the R build (in any case, step only takes a few seconds)
+# make sure to match R and BiocManager versions and to update renv (renv::snapshot())
+# build without vignettes/manual only refers to dependencies, R package is built fully
 language: R
 cache:
   directories:

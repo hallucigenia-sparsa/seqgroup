@@ -5,7 +5,7 @@
 \alias{ibd_lineages}
 \title{Lineages for taxa from the PRISM cohort}
 \format{
-An object of class \code{matrix} with 201 rows and 7 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 201 rows and 7 columns.
 }
 \usage{
 data(ibd_lineages)

@@ -5,7 +5,7 @@
 \alias{floresgut_taxa}
 \title{Gut taxon abundances from Flores et al.}
 \format{
-An object of class \code{matrix} with 323 rows and 637 columns.
+An object of class \code{matrix} (inherits from \code{array}) with 323 rows and 637 columns.
 }
 \usage{
 data(floresgut_taxa)
@@ -14,13 +14,13 @@ data(floresgut_taxa)
 Taxon x sample matrix of size 323 x 637
 }
 \description{
-Data were obtained through 16S sequencing of the V4 region.
+Data were obtained through 16S sequencing (V4 region) of faecal material.
 }
 \details{
 OTU abundances were downloaded from QIITA in Nov 2020 (ID: 2151). Control and non-gut samples, samples with less than 10000 reads,
-mislabel chance above 50% or no mislabel data were removed. Samples belonging to subjects with less than 6 samples taken
+with a mislabel chance above 50% or no mislabel data were removed. Samples belonging to subjects with less than 6 samples
 were also removed. Samples were rarefied to 10000 reads and OTUs were aggregated to genus level. OTUs without a known genus were summed into
-a garbage taxon named sumUnknown. The resulting genus count matrix has 323 taxa and 637 samples.
+a garbage taxon named sumUnknown. Samples were ordered first by subject and then by time (week number).
 }
 \examples{
 data(floresgut_taxa)

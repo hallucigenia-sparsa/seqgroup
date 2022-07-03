@@ -8,7 +8,7 @@
 #' and, for SPIEC-EASI and CoNet, edges in red or green, depending on whether they
 #' represent negative or positive associations.
 #'
-#' @details For SPIEC-EASI, edge width represents the abolute of the regression coefficients, whereas for bnlearn,
+#' @details For SPIEC-EASI, edge width represents the absolute of the regression coefficients, whereas for bnlearn,
 #' it represents the probability of an arc to re-appear across bootstrap iterations. For CoNet, it either
 #' represents absolute association strength, method number supporting an edge or significance,
 #' depending on whether more than one method was used to compute the network and whether or not
@@ -216,12 +216,117 @@ buildNetwork<-function(abundances, lineages=NULL, min.occ=0, norm=FALSE, clr=FAL
     }
   }
 
-  result.graph=colorGraph(result.graph,lineages = lineages,colorLevel = colorLevel,nameLevel = nameLevel, legend=legend, left.margin=left.margin)
+  result.graph=colorGraphWithLineages(result.graph,lineages = lineages,colorLevel = colorLevel,nameLevel = nameLevel, legend=legend, left.margin=left.margin)
   return(result.graph)
 }
 
+# title Color nodes in a network
+# param network igraph network object
+# param abundances optional abundance matrix from which network was built
+# param groups vector with group memberships, either in the order of nodes in the network (V(network)) or in the order of samples in abundances
+# param groupColors optional group color map; if not provided, colors are assigned randomly
+# param colorStrategy if abundances and two sample groups are provided, logdiff: color taxa according to their log ratio across the two groups (assigns new node groups: low, medium and high)
+# examples
+# data(ibd_taxa)
+# data(ibd_metadata)
+# ibd_genera=aggregateTaxa(ibd_taxa,lineages = ibd_lineages,taxon.level = "genus")
+# network=buildNetwork(ibd_genera,method="spearman",initEdgeNum=50)
+# groups=as.character(ibd_metadata$Diagnosis)
+# ibd.indices=c(which(groups=="UC"),which(groups=="CD"))
+# groups[ibd.indices]="IBD"
+# groupColors=list("low"="green","high"="red")
+# plot(colorNetwork(network,abundances=ibd_genera,groups=groups,colorStrategy="logdiff",groupColors=groupColors)) # edges too thick
+#
+# et.indices=c(which(names(V(network))=="Bacteroides"),which(names(V(network))=="Ruminococcus"))
+# colors=rep("n",length(names(V(network))))
+# colors[et.indices]="y"
+# plot(colorNetwork(network,groups=colors))
+# groupColors=list("n"="gray","y"="red")
+# plot(colorNetwork(network,groups=colors,groupColors=groupColors))
+#
+colorNetwork<-function(network, abundances=NULL, groups=c(), groupColors=list(), colorStrategy="none"){
+  if(!is.null(abundances)){
+    if(colorStrategy=="logdiff" && length(groups)!=ncol(abundances)){
+      stop("Color strategy not applicable: length of groups vector does not match number of samples in abundances!")
+    }else if(colorStrategy != "logdiff" && length(V(network))!=length(groups)){
+      stop("Please provide a group vector with as many entries as there are nodes.")
+    }
+  }else{
+    if(length(V(network))!=length(groups)){
+      stop("Please provide a group vector with as many entries as there are nodes.")
+    }
+  }
+  colors=c()
+  medium="medium"
+  medium.color="orange"
+  low="low"
+  low.color="red"
+  high="high"
+  high.color="green"
+  groupNum=length(unique(groups))
+  # if graph is non-empty
+  if(length(E(network))>0){
+    if(!is.null(abundances)){
+      if(colorStrategy=="logdiff"){
+        if(groupNum==2){
+          node.indices=match(V(network)$name,rownames(abundances))
+          unique.groups=unique(groups)
+          group1.indices=which(groups==unique.groups[1])
+          group2.indices=which(groups==unique.groups[2])
+          print(paste("Group 1:",unique.groups[1]))
+          print(paste("Group 2:",unique.groups[2]))
+          mean.group1=apply(abundances[node.indices,group1.indices],1,mean)
+          mean.group2=apply(abundances[node.indices,group2.indices],1,mean)
+          logratio=log(mean.group1/mean.group2)
+          # medium ones will be gray
+          colors=rep(medium.color,length(logratio))
+          if(medium %in% names(groupColors)){
+            colors=rep(groupColors[[medium]],length(logratio))
+          }else{
+            groupColors[[medium]]=medium.color
+          }
+          # species more abundant in group 2 will have low color
+          if(low %in% names(groupColors)){
+            colors[which(logratio < (-1))]=groupColors[[low]]
+          }else{
+            colors[which(logratio < (-1))]=low.color
+            groupColors[[low]]=low.color
+          }
+          print(paste("Taxa more abundant in group 2 will have color",groupColors[[low]]))
+          # species more abundant in group 1 will have high color
+          if(high %in% names(groupColors)){
+            colors[which(logratio > 1)]=groupColors[[high]]
+          }else{
+            colors[which(logratio > 1)]=high.color
+            groupColors[[high]]=high.color
+          }
+          print(paste("Taxa more abundant in group 1 will have color",groupColors[[high]]))
+          print(paste("All other taxa will have color",groupColors[[medium]]))
+          #print(length(V(network)))
+          #print(length(colors))
+          #print(groupColors)
+        }else{
+          stop("Color strategy only applicable for two groups.")
+        }
+      } # color strategy
+    } # abundances provided
+    #unique.groups=unique(nodeGroups)
+    if(length(names(groupColors))==0){
+      colorObj=assignColorsToGroups(groups, returnMap=TRUE)
+      colors=colorObj$colors
+    }else{
+      if(colorStrategy!="logdiff"){
+        colors=assignColorsToGroups(groups, myColors = groupColors)
+      }
+    }
+    V(network)$color=colors
+  } # network non-empty
+  return(network)
+}
+
+
 # label and color nodes in igraph object according to selected lineage level and set global attributes
-colorGraph<-function(result.graph, lineages=NULL,nameLevel="",colorLevel="", legend=FALSE, left.margin=10){
+colorGraphWithLineages<-function(result.graph, lineages=NULL,nameLevel="",colorLevel="", legend=FALSE, left.margin=10){
   # if graph is non-empty
   if(length(E(result.graph))>0){
     # lineages provided

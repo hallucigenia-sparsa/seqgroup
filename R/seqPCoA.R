@@ -28,18 +28,21 @@
 #' @param abundances a matrix with taxa as rows and samples as columns
 #' @param reference an optional reference data set on which abundances are mapped; data are merged by matching row names (nonmatching ones are kept as sum); cannot be combined with rda or topMetadata (topMetadata needs to be set to zero)
 #' @param rarefyRef rarefy abundance and reference samples to the minimum total count found in any of the samples; recommended when the total counts differ
-#' @param addToRefStepwise compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda or drawEllipse
+#' @param addToRefStepwise compute ordination coordinates for each sample added to the reference separately; cannot be combined with metadata, rda, errorbars or drawEllipse
 #' @param refName group name for reference samples
 #' @param metadata an optional data frame with metadata items as columns, where samples are in the same order as in abundances and data types (factor vs numeric) are supposed to be correct; if provided and rda is FALSE, envfit is carried out
 #' @param groupAttrib optional: the name of a metadata item that refers to a vector that provides for each sample its group membership
 #' @param groups an optional vector that provides for each sample its group membership in the same order as samples are given in abundances; overridden by groupAttrib
 #' @param groupColors an optional map of predefined colors for groups that matches names in groups (which should be strings); adds a color legend to the plot; if reference is provided, refName is added if absent
 #' @param colors an optional vector of colors with entries in the same order as samples to be colored; it overrides groupColors if provided
-#' @param clusters an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible)
+#' @param timeColors an optional vector of colors for arrows connecting samples interpreted as time points (only relevant when a time vector is supplied)
+#' @param clusters an optional vector that provides for each sample its cluster membership (cluster membership is visualized through shape, up to 10 different shapes are possible, not supported for errorbars)
 #' @param labels an optional vector that provides for each sample a label to display
-#' @param sizes a vector of  numeric values that will be displayed as varying sample sizes (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)
-#' @param size.legend a string displayed as a legend for size
-#' @param time an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order)
+#' @param sizes an optional vector that provides for each sample a numeric value that will be displayed as dot size (sizes will be shifted into positive range if necessary and scaled between 0.5 and 2.5)
+#' @param size.legend a string displayed as a legend for size, FALSE suppresses size legend
+#' @param errorbars an optional vector with as many entries as samples, defines groups for drawing error bars with ordibar (sd, conf set via ellipseConf); time connect centroids; color/size/group of first sample in error group assigned
+#' @param errorbarLabels an optional vector with as many entries as groups in errorbars to label centroids; defaults to unique(errorbars); overrides labels (only applies when errorbars vector is supplied)
+#' @param time an optional vector with as many time points as samples, adds arrows between consecutive time points (time points should be in ascending order; if groups are provided, time should be in ascending order per group)
 #' @param hiddenTaxa an optional vector with names of taxa to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed among top co-varying taxa)
 #' @param hiddenSamples an optional vector with indices of samples to be hidden (they will be taken into account for PCoA/RDA/envfit, but are not displayed)
 #' @param dis dissimilarity or distance supported by vegan's vegdist function (if set to cor, a PCA is carried out using vegan's function rda with scale set to true)
@@ -65,8 +68,9 @@
 #' @param env.permut number of permutations for envfit, if drawEllipse is true, for adonis
 #' @param pAdjMethod method for multiple testing correction supported by p.adjust for top-covarying taxon and envfit p-values
 #' @param qvalThreshold threshold on multiple-testing corrected top-covarying taxon and envfit p-values
-#' @param ellipseConf confidence limit for drawEllipse
+#' @param ellipseConf confidence limit for drawEllipse and errorbars
 #' @param dimensions the principal components used for plotting, by default the first and second
+#' @param verbose print out more information
 #' @param \\dots Additional arguments passed to plot()
 #' @examples
 #' data("ibd_taxa")
@@ -82,7 +86,7 @@
 #' @export
 #'
 
-seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=10, topMetadata=10, arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", hideGroupLegend=FALSE, drawEllipse=FALSE, ellipseOnClusters=FALSE, ellipseColorMap=NULL, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), ...){
+seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=FALSE, refName="ref", metadata=NULL, groupAttrib="", groups=c(), groupColors=NULL, colors=c(), timeColors=c(), clusters=c(), labels=c(), sizes=c(), size.legend="", errorbars = c(), errorbarLabels=unique(errorbars), time=c(), hiddenTaxa=c(), hiddenSamples=c(), dis="bray", rda=FALSE, scale=FALSE, doScree=FALSE, topTaxa=round(nrow(abundances)/2), topMetadata=round(nrow(metadata)/2), arrowFactor=0.5, metadataFactor=1, centroidFactor=1, taxonColor="brown", metadataColor="blue", hideGroupLegend=FALSE, drawEllipse=FALSE, ellipseOnClusters=FALSE, ellipseColorMap=NULL, clusterQualityIndex="silhouette", groupDispersion=FALSE, xlim=NULL, ylim=NULL, permut=1000, env.permut=1000, pAdjMethod="BH", qvalThreshold=0.05, ellipseConf=0.95, dimensions=c(1,2), verbose=FALSE, ...){
 
   # Test
   # path.vdp="/Users/u0097353/Documents/Documents_Karoline/MSysBio_Lab/Results/Nephrology/Data/vdp_genera.txt"
@@ -96,12 +100,46 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
   # test step-wise
   # seqPCoA(ibd.genera.counts[,1:20],reference=vdp, rarefyRef=TRUE, groups=groups,xlim=c(-0.1,0.15), ylim=c(-0.1,0.1), addToRefStepwise = TRUE)
 
+  ###### Internal constants ######
+  env.locator=FALSE # label numeric env variables interactively (does not work with zoom)
+  locator.width=0.35 # default is 0.25
+  min.cex=0.5
+  max.cex=2.5
+  pch.value=16
+  errorbarTransparency=0.3
+  # 15=square, 16=circle, 17=triangle point up, 18=diamond, 25=triangle point down,
+  # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
+  clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
+  shift=0.05 # for taxa and numeric env data arrow labeling
+  defaultColor="gray"
+
+  ###### Initialization #########
+  lastIndexRef=0
+  cluster.colors=c()
+  error.centroid.x=c()
+  error.centroid.y=c()
+  errorgroup.vs.group=list()
+  errorgroupColors=c()
+  errorgroupSizes=c()
+  errorbarTransparentColors=c()
+  errorgroupTimeColors=c()
+  sample.coords=matrix(NA, nrow=ncol(abundances),ncol=2) # samples x axes
+  display.size.legend=FALSE
+  metadata.to.plot=c()
+  #metadata.to.plot=c("IS_TOTAL","PCSG")
+
+  ####### Checks #########
   if(length(clusters)>0){
     clusters=as.character(clusters)
   }
 
-  metadata.to.plot=c()
-  #metadata.to.plot=c("IS_TOTAL","PCSG")
+  if(!is.character(groups)){
+    groups=as.character(groups)
+  }
+
+  if(length(errorbarLabels)>0 && length(errorbars)==0){
+    stop("Please provide errorbar groups.")
+  }
 
   if(rda && is.null(metadata)){
     stop("Metadata are needed for RDA!")
@@ -121,6 +159,18 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
 
   if(rda && addToRefStepwise){
     stop("RDA is not available for step-wise addition of samples to reference.")
+  }
+
+  # define default time vector colors
+  if(length(timeColors)==0){
+    timeColors=rep(defaultColor,ncol(abundances))
+  }
+
+  if(length(errorbars)>0){
+    num.error.groups=length(unique(errorbars))
+    if(length(errorbarLabels)>0 && length(errorbarLabels)!=num.error.groups){
+      stop("Please provide as many error bar labels as there are error bar groups.")
+    }
   }
 
   # make it easier for users
@@ -145,8 +195,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     stop("Envfit is not supported when a reference is provided. Please set topMetadata to 0.")
   }
 
-  lastIndexRef=0
-  cluster.colors=c()
+  ##### Preprocessing and more checks ##########
 
   if(!is.null(reference)){
     lastIndexRef=ncol(reference)
@@ -172,12 +221,12 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     }
     if(!is.null(groupColors)){
       if(!(refName %in% names(groupColors))){
-        groupColors[[refName]]="gray"
+        groupColors[[refName]]=defaultColor
       }
     }
     if(length(colors)>0){
       if(length(colors)!=ncol(abundances)){
-        colors=c(rep("gray",ncol(res$table1)),colors)
+        colors=c(rep(defaultColor,ncol(res$table1)),colors)
       }
     }
     if(length(clusters)>0){
@@ -205,14 +254,11 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     metadata=cbind(scaled.numeric.metadata,catbin.metadata)
   }
 
-  min.cex=0.5
-  max.cex=2.5
-  pch.value=16
-  # 15=square, 16=circle, 17=triangle point up, 18=diamond, 25=triangle point down,
-  # 3=plus sign, 4=multiplier sign, 8=star sign, 9=diamond with plus sign, 7=square with plus sign
-  clus.pch.values=c(15,16,17,18,25,3,4,8,9,7)
-  display.size.legend=FALSE
-  sample.coords=matrix(NA, nrow=ncol(abundances),ncol=2) # samples x axes
+  if(verbose){
+    print("Preparations done.")
+  }
+
+  ####### PCoA ###############
 
   if(rda){
 
@@ -322,7 +368,7 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
   }
 
   if(!addToRefStepwise){
-    # proportion of variance explained
+    # proportion of variance explained, see documentation of eigenvals function in vegan
     eig.sum=summary(eigenvals(pcoa.res))
     var.explained.1=eig.sum[2,dimensions[[1]]] # second row of eigenvalue summary: proportion of variance explained
     var.explained.2=eig.sum[2,dimensions[[2]]]
@@ -342,12 +388,18 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       stop("There should be as many colors as samples in the color vector!")
     }
   }else{
-    colors=rep("gray",ncol(abundances))
+    colors=rep(defaultColor,ncol(abundances))
     if(groupAttrib!=""){
       groups=metadata[[groupAttrib]]
       colors=assignColorsToGroups(groups,refName = refName, myColors = groupColors)
+      if(length(errorbars)>0){
+        errorbarTransparentColors=assignColorsToGroups(groups,refName = refName, myColors = groupColors, alpha=errorbarTransparency)
+      }
     }else if(length(groups)>0){
       colors=assignColorsToGroups(groups, refName = refName, myColors = groupColors)
+      if(length(errorbars)>0){
+        errorbarTransparentColors=assignColorsToGroups(groups,refName = refName, myColors = groupColors, alpha=errorbarTransparency)
+      }
     }
   }
 
@@ -385,19 +437,25 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
     ylim=range(pcoa.res$CA$u[selected.sample.indices,dimensions[2]])
   }
 
-  #print("size info")
-  #print(sizes)
+  if(verbose){
+    print("Size info:")
+    print(sizes)
+  }
 
   if(!is.null(sizes) || length(sizes)>0){
     display.size.legend=TRUE
+    #print(paste("legend: ",size.legend))
+    if(size.legend==FALSE){
+      display.size.legend=FALSE
+    }
     # shift into positive range
     if(min(sizes)<0){
       sizes=sizes-min(sizes)
     }
     # scale between 0.5 and 2.5
-    sizes=(sizes-min(sizes))/(0.5*max(sizes)-min(sizes))
+    sizes=(sizes-min(sizes))/(0.5*(max(sizes)-min(sizes)))
     sizes=sizes+min.cex # make sure there is no dot of size zero
-    #print(range(sizes))
+    print(range(sizes))
   }else{
     #sizes=rep(par()$cex,length(selected.sample.indices))
     sizes=rep(par()$cex,ncol(abundances)) # default size
@@ -406,30 +464,113 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
   #print(length(sizes[selected.sample.indices]))
   #print(sizes[selected.sample.indices])
 
-  if(!addToRefStepwise){
-    plot(pcoa.res$CA$u[selected.sample.indices,dimensions],cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+  if(length(errorbars)>0){
+    # draw empty plot with the right dimensions and labels
+    plot(pcoa.res$CA$u[selected.sample.indices,dimensions], type="n", xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab)
+    # calculate centroids but do not display ellipses
+    res.ordi=ordiellipse(pcoa.res,groups = errorbars[selected.sample.indices],kind = "sd",draw="none", scaling=0)
+    # assign group and color to error groups
+    errorTemp=errorbarTransparentColors
+    errorbarTransparentColors=c()
+    for(i in 1:length(res.ordi)){
+      error.sample.name=names(res.ordi)[i]
+      error.sample.index=which(errorbars==error.sample.name)[1] # take first sample in error group to assign group and color
+      if(length(groups)>0){
+        group.of.error.sample=groups[error.sample.index]
+        errorgroup.vs.group[[error.sample.name]]=group.of.error.sample
+      }
+      errorgroupColors=c(errorgroupColors,colors[error.sample.index])
+      errorgroupSizes=c(errorgroupSizes,sizes[error.sample.index])
+      errorbarTransparentColors=c(errorbarTransparentColors,errorTemp[error.sample.index])
+      if(length(timeColors)>0){
+        errorgroupTimeColors=c(errorgroupTimeColors,timeColors[error.sample.index])
+      }
+    }
+    # draw centroids
+    for(i in 1:length(res.ordi)){
+      #print(paste("Error group size: ",errorgroupSizes[i]))
+      points(x=res.ordi[[i]]$center[1], y=res.ordi[[i]]$center[2], col=errorgroupColors[i],cex=errorgroupSizes[i], pch=pch.value)
+      error.centroid.x=c(error.centroid.x, res.ordi[[i]]$center[1])
+      error.centroid.y=c(error.centroid.y, res.ordi[[i]]$center[2])
+    }
+    # add error bars
+    #print(paste("Confidence interval for error bars",ellipseConf))
+    # ordibar suddenly adds arrow heads...
+    # length=0 should switch them off, but doesn't work. Cannot disable the plot to draw bars myself, plot=FALSE not an accepted graphical parameter. Could not pass on code=0.
+    #res.ordibar=ordibar(pcoa.res,groups = errorbars[selected.sample.indices], length=0, kind = "sd", scaling=0, col=errorbarTransparentColors, conf=ellipseConf)
+    # draw bars myself using ordibar output
+    #for(i in 1:length(res.ordibar)){
+     # print(paste("x0=",res.ordibar[[i]]$center[1]))
+     # print(paste("y0=",res.ordibar[[i]]$center[2]))
+     # print((res.ordibar[[i]]$center[1]+res.ordibar[[i]]$cov[1,1]))
+     # print((res.ordibar[[i]]$center[2]+res.ordibar[[i]]$cov[1,2]))
+      #arrows(x0=res.ordibar[[i]]$center[1], y0=res.ordibar[[i]]$center[2], x1=(res.ordibar[[i]]$center[1]+res.ordibar[[i]]$cov[1,1]), y1=(res.ordibar[[i]]$center[2]+res.ordibar[[i]]$cov[1,2]), col=errorbarTransparentColors[i], length=0.1, lty=2, code=0) # code = 0: no arrow head
+    #}
+    # ordiellipse as best alternative solution (respects conf)
+    ordiellipse(pcoa.res,groups = errorbars[selected.sample.indices],kind = "sd", scaling=0, col=errorbarTransparentColors, conf=ellipseConf, draw="lines")
+    #ordispider(pcoa.res,groups = errorbars[selected.sample.indices],scaling=0, col=errorbarTransparentColors)
   }else{
-    plot(sample.coords[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+    if(!addToRefStepwise){
+      plot(pcoa.res$CA$u[selected.sample.indices,dimensions],cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+    }else{
+      plot(sample.coords[selected.sample.indices,dimensions], cex=sizes[selected.sample.indices], col=colors[selected.sample.indices], xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, bg=colors[selected.sample.indices], pch=pch.value, ...)
+    }
   }
 
   # add sample labels if requested
-  if(length(labels)>0){
+  if(length(labels)>0 && length(errorbarLabels)==0){
+    #print(paste("label num:", length(labels[selected.sample.indices])))
+    #print(labels)
     text(pcoa.res$CA$u[selected.sample.indices,dimensions[1]],pcoa.res$CA$u[selected.sample.indices,dimensions[2]],labels=labels[selected.sample.indices], pos=3, cex=0.9)
+    if(verbose){
+      print("Labels added.")
+    }
+  }
+  if(length(errorbarLabels)>0){
+    text(error.centroid.x,error.centroid.y,labels=errorbarLabels, pos=3, cex=0.9)
+    if(verbose){
+      print("Error bar labels added.")
+    }
   }
 
   # add arrows between consecutive time points if requested
   if(length(time)>0){
-    for(i in 1:(nrow(pcoa.res$CA$u)-1)){
-      # both samples to be connected are visible
-      if(!(i %in% hiddenSamples) && !((i+1) %in% hiddenSamples)){
-        if(length(groups)==0 || groups[i]==groups[i+1]){
-          arrows(x0=pcoa.res$CA$u[i,dimensions[1]],y0=pcoa.res$CA$u[i,dimensions[2]],x1=pcoa.res$CA$u[i+1,dimensions[1]],y1=pcoa.res$CA$u[i+1,dimensions[2]], length=0.1, col="gray", lty=2, angle=20) # length=length of the edges of the arrow head in inches, lty=2 is dashed, angle refers to shaft vs edge of arrow head
-        } # within the same group
-      } # visible
-    } # loop samples
+    if(length(errorbars)>0){
+      errorArrowColors=rep(defaultColor,length(unique(errorbars)))
+      if(length(timeColors)>0){
+        errorArrowColors=errorgroupTimeColors
+      }
+      for(i in 1:(length(res.ordi)-1)){
+        arrows(x0=res.ordi[[i]]$center[1], y0=res.ordi[[i]]$center[2], x1=res.ordi[[i+1]]$center[1], y1=res.ordi[[i+1]]$center[2], col=errorArrowColors, length=0.1, lty=2) # angle=20
+        #print(paste("arrow start coordinates",res.ordi[[i]]$center[1], res.ordi[[i]]$center[2]))
+        #print(paste("arrow end coordinates",res.ordi[[i+1]]$center[1], res.ordi[[i+1]]$center[2]))
+      }
+    }else{
+      for(i in 1:(nrow(pcoa.res$CA$u)-1)){
+        # both samples to be connected are visible
+        if(!(i %in% hiddenSamples) && !((i+1) %in% hiddenSamples)){
+          if(length(groups)==0 || groups[i]==groups[i+1]){
+            arrows(x0=pcoa.res$CA$u[i,dimensions[1]],y0=pcoa.res$CA$u[i,dimensions[2]],x1=pcoa.res$CA$u[i+1,dimensions[1]],y1=pcoa.res$CA$u[i+1,dimensions[2]], length=0.1, col=timeColors[i], lty=2, angle=20) # length=length of the edges of the arrow head in inches, lty=2 is dashed, angle refers to shaft vs edge of arrow head
+          } # within the same group
+        } # visible
+      } # loop samples
+    } # no errorbars
+
+    if(verbose){
+      print(paste("Number of time points:",length(time)))
+      print(paste("Number of hidden samples:",length(hiddenSamples)))
+      print("Arrows added.")
+    }
   } # time provided
 
-  groups.factor=factor(groups,levels=unique(groups))
+
+  groups.factor=factor(groups,levels=unique(as.character(groups)))
+
+  if(verbose){
+    #print("group factors:")
+    #print(groups.factor)
+  }
+
   # add ellipses if requested
   if(drawEllipse==TRUE && !addToRefStepwise){
     if(length(groups)==0){
@@ -561,7 +702,6 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       }
       arrows(0, 0, U.selected[, 1] * arrowFactor, U.selected[, 2] * arrowFactor, col = taxonColor,length = 0.1, lty=2)
 
-      shift=0.1
       for(i in 1:nrow(U.selected)){
         for(j in 1:ncol(U.selected)){
           if(U.selected[i,j]>0){
@@ -598,7 +738,6 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
       arrows(0, 0, ef.arrows[, 1]*lengths*metadataFactor, ef.arrows[, 2]*lengths*metadataFactor, col = metadataColor, length=0.1)
 
       # move metadata labels to nicer places
-      shift=0.05
       for(i in 1:nrow(ef.arrows)){
         for(j in 1:ncol(ef.arrows)){
           if(ef.arrows[i,j]>0){
@@ -608,7 +747,13 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
           }
         }
       }
-      text(ef.arrows*lengths*metadataFactor, ef.names, cex = 0.8, col = metadataColor)
+      # pos=1, las = 1 means horizontal but is not effective, cex=0.8
+      if(env.locator){
+        # tolerance defaults to 0.25
+        identify(ef.arrows*lengths*metadataFactor, tolerance=locator.width, labels=ef.names, cex = 0.8, col = metadataColor)
+      }else{
+        text(ef.arrows*lengths*metadataFactor, ef.names, cex = 0.8, col = metadataColor)
+      }
     }
     if(length(indices.factors)>0){
       # the order of factors was altered, but since we match by name, this is not problematic
@@ -690,10 +835,11 @@ seqPCoA<-function(abundances, reference=NULL, rarefyRef=FALSE, addToRefStepwise=
 #' @param myColors an optional map of predefined colors for groups
 #' @param returnMap whether to return the color map together with the colors
 #' @param hiddenSamples optional vector of indices of samples to be hidden; these are assigned an invisible color
+#' @param alpha transparency level, 0 for most transparent and 1 for most opaque
 #' @return a vector of colors; if returnMap is true, a vector of colors and the color map
 #' @export
 #'
-assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap=FALSE, hiddenSamples=c()){
+assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap=FALSE, hiddenSamples=c(), alpha=1){
   # make a fully transparent color to hide samples
   trans.col=rgb(0, 1, 0, alpha=0)
 
@@ -706,7 +852,7 @@ assignColorsToGroups<-function(groups, refName="ref", myColors = NULL, returnMap
     groupNum=groupNum-1 # reference counts extra
   }
   col.vec = seq(0,1,1/groupNum)
-  hues = hsv(col.vec)
+  hues = hsv(col.vec,alpha=alpha)
   #print(hues)
   hueCounter=1
   colors=c()
