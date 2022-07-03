@@ -4,6 +4,7 @@
 # travis_wait  before sudo apt-get works, but creates a log file that then results in a note in the R build (in any case, step only takes a few seconds)
 # make sure to match R and BiocManager versions and to update renv (renv::snapshot())
 # build without vignettes/manual only refers to dependencies, R package is built fully
+# travis url: https://app.travis-ci.com/github/hallucigenia-sparsa/seqgroup
 language: R
 cache:
   directories:
@@ -15,7 +16,7 @@ env:
      - R_BUILD_ARGS="--no-build-vignettes --no-manual"
 
 warnings_are_errors: false
-r: 3.6.1
+r: 4.2.1
 
 r_github_packages:
   - zdk123/SpiecEasi
@@ -24,6 +25,6 @@ before_install: sudo apt-get install gsl-bin libgsl0-dev
 install:
   - Rscript -e "if (!requireNamespace('renv', quietly = TRUE)) install.packages('renv')"
   - Rscript -e "if (!requireNamespace('BiocManager', quietly = TRUE)) install.packages('BiocManager')"
-  - Rscript -e "BiocManager::install(version='3.10')"
+#  - Rscript -e "BiocManager::install(version='3.10')"
   - Rscript -e "renv::restore()"
 
